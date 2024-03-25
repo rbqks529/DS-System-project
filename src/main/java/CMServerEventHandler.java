@@ -7,27 +7,27 @@ import kr.ac.konkuk.ccslab.cm.manager.CMDBManager;
 import kr.ac.konkuk.ccslab.cm.stub.CMServerStub;
 
 public class CMServerEventHandler implements CMAppEventHandler {
-
     private CMServerStub m_serverStub;
+
     public CMServerEventHandler(CMServerStub serverStub) {
         m_serverStub = serverStub;
     }
 
+    @Override
     public void processEvent(CMEvent cme) {
-        switch (cme.getType())
-        {
+        switch(cme.getType()) {
             case CMInfo.CM_SESSION_EVENT:
                 processSessionEvent(cme);
                 break;
             default:
-                return;
+                break;
         }
     }
-    private void processSessionEvent(CMEvent cme){
+
+    private void processSessionEvent(CMEvent cme) {
         CMConfigurationInfo confInfo = m_serverStub.getCMInfo().getConfigurationInfo();
         CMSessionEvent se = (CMSessionEvent) cme;
-        switch (se.getID())
-        {
+        switch(se.getID()) {
             case CMSessionEvent.LOGIN:
                 System.out.println("[" + se.getUserName() + "] requests login.");
                 if(confInfo.isLoginScheme()){
@@ -40,9 +40,10 @@ public class CMServerEventHandler implements CMAppEventHandler {
                         m_serverStub.replyEvent(se, 1);
                     }
                 }
-                break;
             default:
                 return;
         }
     }
+
+
 }
