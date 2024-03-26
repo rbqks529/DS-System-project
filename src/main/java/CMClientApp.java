@@ -47,7 +47,6 @@ public class CMClientApp {
                 public void mouseDragged(java.awt.event.MouseEvent evt) {
                     xEnd = evt.getX();
                     yEnd = evt.getY();
-
                     // 현재 도형을 shapes에 추가하고 다시 그리기
                     repaint();
                 }
@@ -156,7 +155,7 @@ public class CMClientApp {
         JFrame whiteboardFrame = new JFrame("공유 화이트 보드");
         whiteboardFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         whiteboardFrame.setLayout(new BorderLayout());
-        whiteboardFrame.setSize(1000, 800);
+        whiteboardFrame.setSize(800, 800);
 
         // 도형 그리는 패널 생성
         DrawingPanel drawingPanel = new DrawingPanel();
