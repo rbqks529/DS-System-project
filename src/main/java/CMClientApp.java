@@ -21,20 +21,21 @@ public class CMClientApp {
         private String currentShape; // 현재 그리는 도형
         private int xBegin, yBegin, xEnd, yEnd;
         private String shapeType = "line"; // 기본 도형은 선
+        private Color lineColor = Color.BLACK; // 선색
+        private int lineWidth = 1; // 선굵기
+        private Color fillColor = Color.WHITE; // 색채우기 색상
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
             setBackground(Color.WHITE);
             shapes = ""; // 초기화
             currentShape = "line"; // 기본 도형은 선
-
-            addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mousePressed(java.awt.event.MouseEvent evt) {
+            addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent evt) {
                     xBegin = evt.getX();
                     yBegin = evt.getY();
                 }
-
-                public void mouseReleased(java.awt.event.MouseEvent evt) {
+                public void mouseReleased(MouseEvent evt) {
                     xEnd = evt.getX();
                     yEnd = evt.getY();
                     // 새로운 도형을 shapes에 추가하고 다시 그리기
@@ -42,35 +43,61 @@ public class CMClientApp {
                     repaint();
                 }
             });
-
-            addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-                public void mouseDragged(java.awt.event.MouseEvent evt) {
+            addMouseMotionListener(new MouseMotionAdapter() {
+                public void mouseDragged(MouseEvent evt) {
                     xEnd = evt.getX();
                     yEnd = evt.getY();
                     // 현재 도형을 shapes에 추가하고 다시 그리기
                     repaint();
                 }
             });
-
             // 도형 선택 버튼 리스너 설정
             JButton lineButton = new JButton("Line");
             JButton circleButton = new JButton("Circle");
             JButton rectangleButton = new JButton("Rectangle");
-
             ButtonGroup group = new ButtonGroup();
             group.add(lineButton);
             group.add(circleButton);
             group.add(rectangleButton);
-
             lineButton.addActionListener(e -> currentShape = "line");
             circleButton.addActionListener(e -> currentShape = "circle");
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
+
+            // 선색, 선굵기, 색채우기 설정
+            JComboBox<String> colorComboBox = new JComboBox<>(new String[]{"Black", "Red", "Green", "Blue"});
+            colorComboBox.addActionListener(e -> {
+                String color = (String) colorComboBox.getSelectedItem();
+                switch (color) {
+                    case "Black":
+                        lineColor = Color.BLACK;
+                        break;
+                    case "Red":
+                        lineColor = Color.RED;
+                        break;
+                    case "Green":
+                        lineColor = Color.GREEN;
+                        break;
+                    case "Blue":
+                        lineColor = Color.BLUE;
+                        break;
+                }
+            });
+
+            JComboBox<Integer> widthComboBox = new JComboBox<>(new Integer[]{1, 2, 3, 4, 5});
+            widthComboBox.addActionListener(e -> lineWidth = (Integer) widthComboBox.getSelectedItem());
+
+            JButton fillColorButton = new JButton("Fill Color");
+            fillColorButton.addActionListener(e -> {
+                fillColor = JColorChooser.showDialog(null, "Choose a color", fillColor);
+            });
 
             JPanel buttonPanel = new JPanel();
             buttonPanel.add(lineButton);
             buttonPanel.add(circleButton);
             buttonPanel.add(rectangleButton);
-
+            buttonPanel.add(colorComboBox);
+            buttonPanel.add(widthComboBox);
+            buttonPanel.add(fillColorButton);
             add(buttonPanel, BorderLayout.NORTH);
         }
 
@@ -87,14 +114,18 @@ public class CMClientApp {
                     int y1 = Integer.parseInt(tokens[2]);
                     int x2 = Integer.parseInt(tokens[3]);
                     int y2 = Integer.parseInt(tokens[4]);
-
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setColor(lineColor);
+                    g2d.setStroke(new BasicStroke(lineWidth));
                     switch (type) {
                         case "line":
-                            g.drawLine(x1, y1, x2, y2);
+                            g2d.drawLine(x1, y1, x2, y2);
                             break;
                         case "circle":
                             int radius = (int) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-                            g.drawOval(x1 - radius, y1 - radius, radius * 2, radius * 2);
+                            g2d.drawOval(x1 - radius, y1 - radius, radius * 2, radius * 2);
+                            g2d.setColor(fillColor);
+                            g2d.fillOval(x1 - radius, y1 - radius, radius * 2, radius * 2); // 원 채우기
                             break;
                         case "rectangle":
                             // 계산된 좌표값을 사용하여 사각형 그리기
@@ -102,11 +133,44 @@ public class CMClientApp {
                             int height = Math.abs(y2 - y1);
                             int startX = Math.min(x1, x2);
                             int startY = Math.min(y1, y2);
-
-                            g.drawRect(startX, startY, width, height);
+                            g2d.drawRect(startX, startY, width, height);
+                            g2d.setColor(fillColor);
+                            g2d.fillRect(startX, startY, width, height);
                             break;
                     }
+                    g2d.dispose();
                 }
+            }
+        }
+        public class Shape {
+            private String type;
+            private int x1, y1, x2, y2;
+            private Color lineColor;
+            private int lineWidth;
+            private Color fillColor;
+
+            // 생성자
+            public Shape(String type, int x1, int y1, int x2, int y2, Color lineColor, int lineWidth, Color fillColor) {
+                this.type = type;
+                this.x1 = x1;
+                this.y1 = y1;
+                this.x2 = x2;
+                this.y2 = y2;
+                this.lineColor = lineColor;
+                this.lineWidth = lineWidth;
+                this.fillColor = fillColor;
+            }
+
+            // toString 메서드 오버라이드
+            @Override
+            public String toString() {
+                return String.format("%s,%d,%d,%d,%d,%s,%d,%s",
+                        type, x1, y1, x2, y2, getColorString(lineColor), lineWidth, getColorString(fillColor));
+            }
+
+            // Color 객체를 문자열로 변환하는 보조 메서드
+            private String getColorString(Color color) {
+                return String.format("%d,%d,%d", color.getRed(), color.getGreen(), color.getBlue());
             }
         }
     }
