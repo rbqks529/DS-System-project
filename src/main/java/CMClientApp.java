@@ -200,6 +200,8 @@ public class CMClientApp {
         buttonPanel.add(logoutButton);
         whiteboardFrame.add(buttonPanel, BorderLayout.NORTH);
 
+        logoutButton.setEnabled(false);
+
         // 프레임 위치 설정 및 표시
         whiteboardFrame.setLocationRelativeTo(null); // 화면 중앙에 위치
         whiteboardFrame.setVisible(true);
