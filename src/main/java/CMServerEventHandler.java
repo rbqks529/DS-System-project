@@ -7,9 +7,11 @@ import kr.ac.konkuk.ccslab.cm.manager.CMDBManager;
 import kr.ac.konkuk.ccslab.cm.stub.CMServerStub;
 
 public class CMServerEventHandler implements CMAppEventHandler {
+    private CMServerApp m_server;
     private CMServerStub m_serverStub;
 
-    public CMServerEventHandler(CMServerStub serverStub) {
+    public CMServerEventHandler(CMServerStub serverStub, CMServerApp server) {
+        m_server = server;
         m_serverStub = serverStub;
     }
 
