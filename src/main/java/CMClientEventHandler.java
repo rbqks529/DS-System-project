@@ -6,6 +6,16 @@ import kr.ac.konkuk.ccslab.cm.stub.CMClientStub;
 
 public class CMClientEventHandler implements CMAppEventHandler {
     private CMClientStub clientStub;
+	private long m_lStartTime;
+	public void setStartTime(long time)
+	{
+		m_lStartTime = time;
+	}
+
+	public long getStartTime()
+	{
+		return m_lStartTime;
+	}
 
     public CMClientEventHandler(CMClientStub clientStub) {
         this.clientStub = clientStub;
