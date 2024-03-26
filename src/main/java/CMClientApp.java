@@ -114,7 +114,7 @@ public class CMClientApp {
 
     public CMClientApp() {
         m_clientStub = new CMClientStub();
-        m_eventHandler = new CMClientEventHandler(m_clientStub);
+        m_eventHandler = new CMClientEventHandler(m_clientStub, this);
         createWhiteboard();
     }
 
@@ -240,33 +240,6 @@ public class CMClientApp {
             }
         }
         printMessage("======\n");
-
-        int nClientState;
-        nClientState = m_clientStub.getCMInfo().getInteractionInfo().getMyself().getState();
-
-        switch(nClientState)
-        {
-            case CMInfo.CM_INIT: //로그인 버튼
-                loginButton.setEnabled(true);
-                logoutButton.setEnabled(false);
-                break;
-            case CMInfo.CM_CONNECT: //로그인 버튼
-                loginButton.setEnabled(true);
-                logoutButton.setEnabled(false);;
-                break;
-            case CMInfo.CM_LOGIN: //로그아웃 버튼
-                loginButton.setEnabled(false);
-                logoutButton.setEnabled(true);
-                break;
-            case CMInfo.CM_SESSION_JOIN:    //로그아웃 버튼
-                loginButton.setEnabled(false);
-                logoutButton.setEnabled(true);
-                break;
-            default:    //로그인 버튼
-                loginButton.setEnabled(true);
-                logoutButton.setEnabled(false);
-                break;
-        }
     }
 
     private void logout() {
@@ -279,6 +252,11 @@ public class CMClientApp {
             printStyledMessage("failed the logout request!\n", "bold");
         printMessage("======\n");
 
+        setButtonsAccordingToClientState();
+    }
+
+    public void setButtonsAccordingToClientState()
+    {
         int nClientState;
         nClientState = m_clientStub.getCMInfo().getInteractionInfo().getMyself().getState();
 
