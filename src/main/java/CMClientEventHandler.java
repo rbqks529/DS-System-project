@@ -38,9 +38,6 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			case CMInfo.CM_DATA_EVENT:
 				processDataEvent(cme);
 				break;
-			case CMInfo.CM_INTEREST_EVENT:
-				processInterestEvent(cme);
-				break;
 		}
 	}
 
@@ -56,23 +53,6 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			case CMDataEvent.REMOVE_USER:
 				printMessage("["+de.getUserName()+"] leaves group("+de.getHandlerGroup()+") in session("
 						+de.getHandlerSession()+").\n");
-				break;
-			default:
-				return;
-		}
-	}
-	private void processInterestEvent(CMEvent cme)
-	{
-		CMInterestEvent ie = (CMInterestEvent) cme;
-		switch(ie.getID())
-		{
-			case CMInterestEvent.USER_ENTER:
-				printMessage("["+ie.getUserName()+"] enters group("+ie.getCurrentGroup()+") in session("
-						+ie.getHandlerSession()+").\n");
-				break;
-			case CMInterestEvent.USER_LEAVE:
-				printMessage("["+ie.getUserName()+"] leaves group("+ie.getHandlerGroup()+") in session("
-						+ie.getHandlerSession()+").\n");
 				break;
 			default:
 				return;
