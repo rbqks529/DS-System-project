@@ -12,76 +12,78 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class CMClientApp {
-    private CMClientStub m_clientStub;
-    private CMClientEventHandler m_eventHandler;
-    private JTextPane consoleTextPane = new JTextPane();
-    private JButton loginButton = new JButton("Login");
-    private JButton logoutButton = new JButton("Logout");
+    private CMClientStub m_clientStub;//CM 클라이언트 서언
+    private CMClientEventHandler m_eventHandler; //CM 이벤트 헨들러 선언
+    private JTextPane consoleTextPane = new JTextPane(); //콘솔을 보여주기위한 텍스트 패널 선언
+    private JButton loginButton = new JButton("Login"); //로그인 버튼
+    private JButton logoutButton = new JButton("Logout"); //로그아웃 버튼
 
-
+    //도형을 그리기 위한 패널
     public class DrawingPanel extends JPanel {
-        private StringBuilder shapes;
-        private String currentShape;
-        private int xBegin, yBegin, xEnd, yEnd;
-        private String shapeType = "line";
-        private Color lineColor = Color.BLACK; // Default line color
-        private Color fillColor = Color.WHITE; // Default fill color
-        private int currentThickness = 1; // Default thickness
-        private boolean fillShape = false; // Default no fill
+        private StringBuilder shapes; // 도형 목록을 저장하는 문자열 빌더
+        private String currentShape; // 현재 선택된 도형
+        private int xBegin, yBegin, xEnd, yEnd; // 도형의 시작점과 끝점 좌표
+        private String shapeType = "line"; // 기본 도형 타입은 선
+        private Color lineColor = Color.BLACK; // 기본 선 색상은 검정색
+        private Color fillColor = Color.WHITE; // 기본 채우기 색상은 흰색
+        private int currentThickness = 1; // 기본 선 두께는 1
+        private boolean fillShape = false; // 도형을 채울지 여부
 
         public DrawingPanel() {
-            setPreferredSize(new Dimension(600, 400));
-            setBackground(Color.WHITE);
-            shapes = new StringBuilder();
-            currentShape = "line";
+            setPreferredSize(new Dimension(600, 400)); // 패널 크기 설정
+            setBackground(Color.WHITE); // 배경색 설정
+            shapes = new StringBuilder(); // 도형 목록 초기화
+            currentShape = "line"; // 기본 도형은 선
 
-            // Add buttons for selecting shapes
+            // 도형 선택을 위한 버튼 추가
             JButton lineButton = new JButton("Line");
             JButton circleButton = new JButton("Circle");
             JButton rectangleButton = new JButton("Rectangle");
 
+            // 각 버튼에 대한 액션 리스너 등록
             lineButton.addActionListener(e -> currentShape = "line");
             circleButton.addActionListener(e -> currentShape = "circle");
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
 
-            JPanel shapeButtonPanel = new JPanel();
-            shapeButtonPanel.add(lineButton);
-            shapeButtonPanel.add(circleButton);
-            shapeButtonPanel.add(rectangleButton);
-            add(shapeButtonPanel, BorderLayout.NORTH);
+            JPanel shapeButtonPanel = new JPanel(); // 도형 버튼 패널 생성
+            shapeButtonPanel.add(lineButton); // 선 버튼 추가
+            shapeButtonPanel.add(circleButton); // 원 버튼 추가
+            shapeButtonPanel.add(rectangleButton); // 사각형 버튼 추가
+            add(shapeButtonPanel, BorderLayout.NORTH); // 도형 버튼 패널을 패널 상단에 추가
 
-            // Add buttons for line color and fill color
+            // 선 색상과 채우기 색상 선택을 위한 버튼 추가
             JButton lineColorButton = new JButton("Line Color");
             JButton fillColorButton = new JButton("Fill Color");
 
+            // 각 버튼에 대한 액션 리스너 등록
             lineColorButton.addActionListener(e -> {
                 lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
                 repaint();
             });
-
             fillColorButton.addActionListener(e -> {
                 fillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
                 repaint();
             });
 
-            JPanel colorButtonPanel = new JPanel();
-            colorButtonPanel.add(lineColorButton);
-            colorButtonPanel.add(fillColorButton);
-            add(colorButtonPanel, BorderLayout.SOUTH);
+            JPanel colorButtonPanel = new JPanel(); // 색상 버튼 패널 생성
+            colorButtonPanel.add(lineColorButton); // 선 색상 버튼 추가
+            colorButtonPanel.add(fillColorButton); // 채우기 색상 버튼 추가
+            add(colorButtonPanel, BorderLayout.SOUTH); // 색상 버튼 패널을 패널 하단에 추가
 
-            // Add slider for line thickness
+            // 선 두께를 설정하기 위한 슬라이더 추가
             JSlider thicknessSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 1);
             thicknessSlider.setMajorTickSpacing(1);
             thicknessSlider.setPaintTicks(true);
             thicknessSlider.setPaintLabels(true);
             thicknessSlider.addChangeListener(e -> currentThickness = thicknessSlider.getValue());
-
+            
+            // 두께 버튼을 만들고 버튼에 슬라이더 등록
             JPanel thicknessPanel = new JPanel();
             thicknessPanel.add(new JLabel("Thickness:"));
             thicknessPanel.add(thicknessSlider);
             add(thicknessPanel, BorderLayout.CENTER);
 
-            // Add mouse event handler
+            /// 마우스 이벤트 핸들러 등록
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
@@ -93,6 +95,7 @@ public class CMClientApp {
                 public void mouseReleased(MouseEvent e) {
                     xEnd = e.getX();
                     yEnd = e.getY();
+                    // 도형 정보를 문자열로 생성하여 도형 목록에 추가
                     String shape = currentShape + "," + xBegin + "," + yBegin + "," + xEnd + "," + yEnd + ","
                             + colorToHex(lineColor) + "," + colorToHex(fillColor) + "," + currentThickness + ","
                             + fillShape + ";";
@@ -102,6 +105,7 @@ public class CMClientApp {
             });
         }
 
+        //그림을 그리는 함수
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -119,21 +123,22 @@ public class CMClientApp {
                     int thickness = Integer.parseInt(tokens[7]);
                     boolean fill = Boolean.parseBoolean(tokens[8]);
 
+                    // 그래픽스 2D 객체로 형변환
                     Graphics2D g2d = (Graphics2D) g;
-                    g2d.setColor(lc);
-                    g2d.setStroke(new BasicStroke(thickness));
+                    g2d.setColor(lc); //선 색 설정
+                    g2d.setStroke(new BasicStroke(thickness)); //선 두께 설정
                     switch (type) {
-                        case "line":
+                        case "line":    //선 그리기
                             g2d.drawLine(x1, y1, x2, y2);
                             break;
-                        case "circle":
+                        case "circle":  //원 그리기
                             int radius = (int) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
                             g2d.setColor(fc);
                             g2d.fillOval(x1 - radius, y1 - radius, radius * 2, radius * 2);
                             g2d.setColor(lc);
                             g2d.drawOval(x1 - radius, y1 - radius, radius * 2, radius * 2);
                             break;
-                        case "rectangle":
+                        case "rectangle":   //사각형 그리기
                             int width = Math.abs(x2 - x1);
                             int height = Math.abs(y2 - y1);
                             int startX = Math.min(x1, x2);
@@ -148,19 +153,21 @@ public class CMClientApp {
             }
         }
 
+        // 색상을 16진수 문자열로 변환하는 메서드ㄴ
         private String colorToHex(Color color) {
             return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
         }
 
+        // 16진수 문자열을 Color 객체로 변환하는 메서드
         private Color hexToColor(String hex) {
             return Color.decode(hex);
         }
     }
 
     public CMClientApp() {
-        m_clientStub = new CMClientStub();
-        m_eventHandler = new CMClientEventHandler(m_clientStub, this);
-        createWhiteboard();
+        m_clientStub = new CMClientStub();  // 클라이언트 스텁 초기화
+        m_eventHandler = new CMClientEventHandler(m_clientStub, this);  // 클라이언트 이벤트 핸들러 초기화
+        createWhiteboard(); // 화이트 보드 생성 메서드 호출
     }
 
     public CMClientStub getClientStub() {
@@ -171,6 +178,7 @@ public class CMClientApp {
         return m_eventHandler;
     }
 
+    // 메시지를 텍스트로 출력하는 메서드
     public void printMessage(String strText)
     {
         StyledDocument doc = consoleTextPane.getStyledDocument();
@@ -180,9 +188,9 @@ public class CMClientApp {
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
-
-        return;
     }
+
+    // 스타일이 적용된 메시지를 출력하는 메서드
     public void printStyledMessage(String strText, String strStyleName)
     {
         StyledDocument doc = consoleTextPane.getStyledDocument();
@@ -193,7 +201,6 @@ public class CMClientApp {
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
-        return;
     }
 
     private void createWhiteboard() {
@@ -214,7 +221,7 @@ public class CMClientApp {
         // JTextPane을 JScrollPane으로 감싸기
         JScrollPane scrollPane = new JScrollPane(consoleTextPane);
         // JScrollPane의 preferredSize를 설정하여 크기 늘리기
-        Dimension preferredSize = new Dimension(300, 200); // 예시로 너비 300, 높이 200 설정
+        Dimension preferredSize = new Dimension(300, 200); // 너비 300, 높이 200 설정
         scrollPane.setPreferredSize(preferredSize);
         // JScrollPane을 whiteboardFrame에 추가
         whiteboardFrame.add(scrollPane, BorderLayout.SOUTH);
@@ -251,6 +258,8 @@ public class CMClientApp {
         whiteboardFrame.setLocationRelativeTo(null); // 화면 중앙에 위치
         whiteboardFrame.setVisible(true);
     }
+    
+    //로그인 함수
     private void login()
     {
         String strUserName = null;
@@ -286,7 +295,9 @@ public class CMClientApp {
         }
         printMessage("======\n");
     }
-
+    
+    
+    //로그아웃 함수
     private void logout() {
         boolean bRequestResult = false;
         printMessage("====== logout from default server\n");
@@ -299,7 +310,9 @@ public class CMClientApp {
 
         setButtonsAccordingToClientState();
     }
-
+    
+    
+    //클라이언트 상태에 따라 버튼을 활성화, 비활성화 하는 함수
     public void setButtonsAccordingToClientState()
     {
         int nClientState;
@@ -329,6 +342,8 @@ public class CMClientApp {
                 break;
         }
     }
+    
+    //메세지를 보내기 위한 더비 이벤트 함수
     private void testDummyEvent(String message)
     {
         CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
