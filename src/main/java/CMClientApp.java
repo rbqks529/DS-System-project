@@ -17,6 +17,7 @@ public class CMClientApp {
     private JTextPane consoleTextPane = new JTextPane(); //콘솔을 보여주기위한 텍스트 패널 선언
     private JButton loginButton = new JButton("Login"); //로그인 버튼
     private JButton logoutButton = new JButton("Logout"); //로그아웃 버튼
+    private boolean loggedIn = false; //로그인 상태를 나타냄
 
     //도형을 그리기 위한 패널
     public class DrawingPanel extends JPanel {
@@ -25,7 +26,7 @@ public class CMClientApp {
         private int xBegin, yBegin, xEnd, yEnd; // 도형의 시작점과 끝점 좌표
         private String shapeType = "line"; // 기본 도형 타입은 선
         private Color lineColor = Color.BLACK; // 기본 선 색상은 검정색
-        private Color fillColor = Color.WHITE; // 기본 채우기 색상은 흰색
+        private Color fillColor = null; // 기본 채우기 색상은 투명
         private int currentThickness = 1; // 기본 선 두께는 1
         private boolean fillShape = false; // 도형을 채울지 여부
 
@@ -34,6 +35,7 @@ public class CMClientApp {
             setBackground(Color.WHITE); // 배경색 설정
             shapes = new StringBuilder(); // 도형 목록 초기화
             currentShape = "line"; // 기본 도형은 선
+            fillColor = null;
 
             // 도형 선택을 위한 버튼 추가
             JButton lineButton = new JButton("Line");
@@ -87,12 +89,16 @@ public class CMClientApp {
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
+                    if (!loggedIn)
+                        return; // 로그인되지 않은 상태에서는 그림을 그리지 않음
                     xBegin = e.getX();
                     yBegin = e.getY();
                 }
 
                 @Override
                 public void mouseReleased(MouseEvent e) {
+                    if (!loggedIn)
+                        return; // 로그인되지 않은 상태에서는 그림을 그리지 않음
                     xEnd = e.getX();
                     yEnd = e.getY();
                     // 도형 정보를 문자열로 생성하여 도형 목록에 추가
@@ -155,11 +161,16 @@ public class CMClientApp {
 
         // 색상을 16진수 문자열로 변환하는 메서드ㄴ
         private String colorToHex(Color color) {
+            if(color == null)   //초기 상태일때 투명
+                return "";
             return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
         }
 
         // 16진수 문자열을 Color 객체로 변환하는 메서드
         private Color hexToColor(String hex) {
+            if(hex.isEmpty())
+                return new Color(0, 0, 0, 0);
+
             return Color.decode(hex);
         }
     }
@@ -294,6 +305,10 @@ public class CMClientApp {
             }
         }
         printMessage("======\n");
+
+        // 로그인 상태 설정
+        loggedIn = true;
+
     }
     
     
@@ -307,6 +322,9 @@ public class CMClientApp {
         else
             printStyledMessage("failed the logout request!\n", "bold");
         printMessage("======\n");
+
+        // 로그인 상태 설정
+        loggedIn = false;
 
         setButtonsAccordingToClientState();
     }
