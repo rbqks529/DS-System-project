@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class CMClientApp {
+    public DrawingPanel drawingPanel = new DrawingPanel();
     private CMClientStub m_clientStub;//CM 클라이언트 서언
     private CMClientEventHandler m_eventHandler; //CM 이벤트 헨들러 선언
     private JTextPane consoleTextPane = new JTextPane(); //콘솔을 보여주기위한 텍스트 패널 선언
@@ -60,11 +61,11 @@ public class CMClientApp {
             // 각 버튼에 대한 액션 리스너 등록
             lineColorButton.addActionListener(e -> {
                 lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
-                repaint();
+                //repaint();
             });
             fillColorButton.addActionListener(e -> {
                 fillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
-                repaint();
+                //repaint();
             });
 
             JPanel colorButtonPanel = new JPanel(); // 색상 버튼 패널 생성
@@ -78,14 +79,14 @@ public class CMClientApp {
             thicknessSlider.setPaintTicks(true);
             thicknessSlider.setPaintLabels(true);
             thicknessSlider.addChangeListener(e -> currentThickness = thicknessSlider.getValue());
-            
+
             // 두께 버튼을 만들고 버튼에 슬라이더 등록
             JPanel thicknessPanel = new JPanel();
             thicknessPanel.add(new JLabel("Thickness:"));
             thicknessPanel.add(thicknessSlider);
             add(thicknessPanel, BorderLayout.CENTER);
 
-            /// 마우스 이벤트 핸들러 등록
+            // 마우스 이벤트 핸들러 등록
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
@@ -107,13 +108,15 @@ public class CMClientApp {
                             + fillShape + ";";
                     shapes.append(shape);
                     repaint();
+
+                    testDummyEvent(shape);
                 }
             });
         }
 
         //그림을 그리는 함수
         @Override
-        protected void paintComponent(Graphics g) {
+        public void paintComponent(Graphics g) {
             super.paintComponent(g);
             String[] shapeArray = shapes.toString().split(";");
             for (String shape : shapeArray) {
@@ -222,7 +225,6 @@ public class CMClientApp {
         whiteboardFrame.setSize(800, 800);
 
         // 도형 그리는 패널 생성
-        DrawingPanel drawingPanel = new DrawingPanel();
         whiteboardFrame.add(drawingPanel, BorderLayout.CENTER);
 
         // 클래스 멤버 변수로 설정
@@ -374,10 +376,10 @@ public class CMClientApp {
             return;
         }
 
-        printMessage("====== test CMDummyEvent in current group\n");
+        printMessage("draw message\n");
 
-        if(message == null) return;
-
+        if(message == null)
+            return;
 
         CMDummyEvent due = new CMDummyEvent();
         due.setHandlerSession(myself.getCurrentSession());

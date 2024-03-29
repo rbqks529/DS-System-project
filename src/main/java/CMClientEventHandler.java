@@ -5,6 +5,8 @@ import kr.ac.konkuk.ccslab.cm.info.CMInfo;
 import kr.ac.konkuk.ccslab.cm.info.CMInteractionInfo;
 import kr.ac.konkuk.ccslab.cm.stub.CMClientStub;
 
+import java.awt.*;
+
 public class CMClientEventHandler implements CMAppEventHandler {
     private CMClientStub m_clientStub;
 	private CMClientApp m_client;
@@ -23,8 +25,8 @@ public class CMClientEventHandler implements CMAppEventHandler {
 		m_client = client;
 		m_clientStub = clientStub;
 		m_lStartTime = 0;
-    }
 
+    }
 	@Override
 	public void processEvent(CMEvent cme) {
 		switch(cme.getType())
@@ -183,8 +185,60 @@ public class CMClientEventHandler implements CMAppEventHandler {
 
 	private void processDummyEvent(CMEvent cme) {
 		CMDummyEvent due = (CMDummyEvent) cme;
-		System.out.println("--> dummy msg ["+due.getSender()+"]: "+due.getDummyInfo());
-		return;
+		String dummyInfo = due.getDummyInfo();
+
+		// 도형 정보를 파싱하여 각각의 속성을 추출
+		String[] shapeArray = dummyInfo.toString().split(";");
+		for (String shape : shapeArray) {
+			String[] tokens = shape.split(",");
+			if (tokens.length == 9) {
+				String type = tokens[0];
+				int x1 = Integer.parseInt(tokens[1]);
+				int y1 = Integer.parseInt(tokens[2]);
+				int x2 = Integer.parseInt(tokens[3]);
+				int y2 = Integer.parseInt(tokens[4]);
+				Color lc = hexToColor(tokens[5]);
+				Color fc = hexToColor(tokens[6]);
+				int thickness = Integer.parseInt(tokens[7]);
+				boolean fill = Boolean.parseBoolean(tokens[8]);
+
+				// 그래픽스 2D 객체로 형변환
+				Graphics2D g2d = (Graphics2D) m_client.drawingPanel.getGraphics();
+				g2d.setColor(lc); //선 색 설정
+				g2d.setStroke(new BasicStroke(thickness)); //선 두께 설정
+
+				switch (type) {
+					case "line":    //선 그리기
+						g2d.drawLine(x1, y1, x2, y2);
+						break;
+					case "circle":  //원 그리기
+						int radius = (int) Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+						g2d.setColor(fc);
+						g2d.fillOval(x1 - radius, y1 - radius, radius * 2, radius * 2);
+						g2d.setColor(lc);
+						g2d.drawOval(x1 - radius, y1 - radius, radius * 2, radius * 2);
+						break;
+					case "rectangle":   //사각형 그리기
+						int width = Math.abs(x2 - x1);
+						int height = Math.abs(y2 - y1);
+						int startX = Math.min(x1, x2);
+						int startY = Math.min(y1, y2);
+						g2d.setColor(fc);
+						g2d.fillRect(startX, startY, width, height);
+						g2d.setColor(lc);
+						g2d.drawRect(startX, startY, width, height);
+						break;
+				}
+			}
+		}
+	}
+
+	// 16진수 문자열을 Color 객체로 변환하는 메서드
+	private Color hexToColor(String hex) {
+		if(hex.isEmpty()) {
+			return new Color(0, 0, 0, 0);
+		}
+		return Color.decode(hex);
 	}
 
 }
