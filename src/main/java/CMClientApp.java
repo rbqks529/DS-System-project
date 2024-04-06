@@ -106,7 +106,7 @@ public class CMClientApp {
                     String shape = currentShape + "," + xBegin + "," + yBegin + "," + xEnd + "," + yEnd + ","
                             + colorToHex(lineColor) + "," + colorToHex(fillColor) + "," + currentThickness + ","
                             + fillShape + ";";
-                    shapes.append(shape);
+                    /*shapes.append(shape);*/
                     repaint();
 
                     testDummyEvent(shape);
