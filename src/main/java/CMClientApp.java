@@ -22,7 +22,7 @@ public class CMClientApp {
 
     //도형을 그리기 위한 패널
     public class DrawingPanel extends JPanel {
-        private StringBuilder shapes; // 도형 목록을 저장하는 문자열 빌더
+        public StringBuilder shapes; // 도형 목록을 저장하는 문자열 빌더
         private String currentShape; // 현재 선택된 도형
         private int xBegin, yBegin, xEnd, yEnd; // 도형의 시작점과 끝점 좌표
         private String shapeType = "line"; // 기본 도형 타입은 선
@@ -106,7 +106,7 @@ public class CMClientApp {
                     String shape = currentShape + "," + xBegin + "," + yBegin + "," + xEnd + "," + yEnd + ","
                             + colorToHex(lineColor) + "," + colorToHex(fillColor) + "," + currentThickness + ","
                             + fillShape + ";";
-                    shapes.append(shape);
+                    /*shapes.append(shape);*/
                     repaint();
 
                     testDummyEvent(shape);
@@ -386,7 +386,6 @@ public class CMClientApp {
         due.setHandlerGroup(myself.getCurrentGroup());
         due.setDummyInfo(message);
         m_clientStub.cast(due, myself.getCurrentSession(), myself.getCurrentGroup());
-        due = null;
 
         printMessage("======\n");
     }
