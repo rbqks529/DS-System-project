@@ -49,12 +49,10 @@ public class CMClientEventHandler implements CMAppEventHandler {
 		switch(de.getID())
 		{
 			case CMDataEvent.NEW_USER:
-				printMessage("["+de.getUserName()+"] enters group("+de.getHandlerGroup()+") in session("
-						+de.getHandlerSession()+").\n");
+				printMessage("["+de.getUserName()+"] enters WhiteBoard group\n");
 				break;
 			case CMDataEvent.REMOVE_USER:
-				printMessage("["+de.getUserName()+"] leaves group("+de.getHandlerGroup()+") in session("
-						+de.getHandlerSession()+").\n");
+				printMessage("["+de.getUserName()+"] leaves WhiteBoard group\n");
 				break;
 			default:
 				return;
