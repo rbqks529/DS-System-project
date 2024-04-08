@@ -28,6 +28,7 @@ public class CMClientApp {
         private String shapeType = "line"; // 기본 도형 타입은 선
         private Color lineColor = Color.BLACK; // 기본 선 색상은 검정색
         private Color fillColor = null; // 기본 채우기 색상은 투명
+        private String inputText = null;
         private int currentThickness = 1; // 기본 선 두께는 1
         private boolean fillShape = false; // 도형을 채울지 여부
 
@@ -42,20 +43,23 @@ public class CMClientApp {
             JButton lineButton = new JButton("Line");
             JButton circleButton = new JButton("Circle");
             JButton rectangleButton = new JButton("Rectangle");
+            JButton textButton = new JButton("Text");
 
             // 각 버튼에 대한 액션 리스너 등록
             lineButton.addActionListener(e -> currentShape = "line");
             circleButton.addActionListener(e -> currentShape = "circle");
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
+            textButton.addActionListener(e -> currentShape = "text");
 
             JPanel shapeButtonPanel = new JPanel(); // 도형 버튼 패널 생성
             shapeButtonPanel.add(lineButton); // 선 버튼 추가
             shapeButtonPanel.add(circleButton); // 원 버튼 추가
             shapeButtonPanel.add(rectangleButton); // 사각형 버튼 추가
+            shapeButtonPanel.add(textButton);
             add(shapeButtonPanel, BorderLayout.NORTH); // 도형 버튼 패널을 패널 상단에 추가
 
             // 선 색상과 채우기 색상 선택을 위한 버튼 추가
-            JButton lineColorButton = new JButton("Line Color");
+            JButton lineColorButton = new JButton("Line & Text Color");
             JButton fillColorButton = new JButton("Fill Color");
 
             // 각 버튼에 대한 액션 리스너 등록
@@ -92,8 +96,26 @@ public class CMClientApp {
                 public void mousePressed(MouseEvent e) {
                     if (!loggedIn)
                         return; // 로그인되지 않은 상태에서는 그림을 그리지 않음
-                    xBegin = e.getX();
-                    yBegin = e.getY();
+
+                    // 텍스트 입력 팝업 띄우기
+                    if(currentShape.equals("text")) {
+                        xBegin = e.getX();
+                        yBegin = e.getY();
+                        inputText = JOptionPane.showInputDialog("Enter text:");
+                        if(inputText != null && !inputText.isEmpty()) {
+                            // 텍스트 정보를 문자열로 생성하여 도형 목록에 추가
+                            String shape = currentShape + "," + xBegin + "," + yBegin + "," + xEnd + "," + yEnd + ","
+                                    + colorToHex(lineColor) + "," + colorToHex(fillColor) + "," + currentThickness + ","
+                                    + fillShape + "," + inputText + ";";
+                            shapes.append(shape);
+                            printMessage(shape);
+                            repaint();
+                            testDummyEvent(shape);
+                        }
+                    } else {
+                        xBegin = e.getX();
+                        yBegin = e.getY();
+                    }
                 }
 
                 @Override
@@ -105,7 +127,7 @@ public class CMClientApp {
                     // 도형 정보를 문자열로 생성하여 도형 목록에 추가
                     String shape = currentShape + "," + xBegin + "," + yBegin + "," + xEnd + "," + yEnd + ","
                             + colorToHex(lineColor) + "," + colorToHex(fillColor) + "," + currentThickness + ","
-                            + fillShape + ";";
+                            + fillShape + "," + inputText + ";";
                     /*shapes.append(shape);*/
                     repaint();
 
@@ -121,7 +143,7 @@ public class CMClientApp {
             String[] shapeArray = shapes.toString().split(";");
             for (String shape : shapeArray) {
                 String[] tokens = shape.split(",");
-                if (tokens.length == 9) {
+                if (tokens.length == 10) {
                     String type = tokens[0];
                     int x1 = Integer.parseInt(tokens[1]);
                     int y1 = Integer.parseInt(tokens[2]);
@@ -131,6 +153,7 @@ public class CMClientApp {
                     Color fc = hexToColor(tokens[6]);
                     int thickness = Integer.parseInt(tokens[7]);
                     boolean fill = Boolean.parseBoolean(tokens[8]);
+                    String text = tokens[9];
 
                     // 그래픽스 2D 객체로 형변환
                     Graphics2D g2d = (Graphics2D) g;
@@ -156,6 +179,11 @@ public class CMClientApp {
                             g2d.fillRect(startX, startY, width, height);
                             g2d.setColor(lc);
                             g2d.drawRect(startX, startY, width, height);
+                            break;
+                        case "text":
+                            g2d.setFont(new Font("돋움체", Font.CENTER_BASELINE, 40));
+                            FontMetrics fontMetrics = g2d.getFontMetrics();
+                            g2d.drawString(text, x1 , y1); // 텍스트 중앙에 위치하도록 조정
                             break;
                     }
                 }
@@ -222,7 +250,7 @@ public class CMClientApp {
         JFrame whiteboardFrame = new JFrame("공유 화이트 보드");
         whiteboardFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         whiteboardFrame.setLayout(new BorderLayout());
-        whiteboardFrame.setSize(800, 800);
+        whiteboardFrame.setSize(900, 800);
 
         // 도형 그리는 패널 생성
         whiteboardFrame.add(drawingPanel, BorderLayout.CENTER);
