@@ -185,8 +185,11 @@ public class CMClientEventHandler implements CMAppEventHandler {
 		CMDummyEvent due = (CMDummyEvent) cme;
 		String dummyInfo = due.getDummyInfo();
 
-		m_client.drawingPanel.shapes.append(dummyInfo);
+
+		m_client.drawingPanel.shapesList.add(Shape.createShapeFromString(dummyInfo));
 		m_client.drawingPanel.repaint();
+
 	}
 
 }
+
