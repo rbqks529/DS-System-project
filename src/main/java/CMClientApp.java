@@ -22,7 +22,6 @@ public class CMClientApp {
 
     // Drawing panel for shapes
     public class DrawingPanel extends JPanel {
-        public StringBuilder shapes;
         // ArrayList to store shapes
         public ArrayList<Shape> shapesList = new ArrayList<>();
         private String currentShape;
@@ -37,7 +36,6 @@ public class CMClientApp {
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
             setBackground(Color.WHITE);
-            shapes = new StringBuilder();
             currentShape = "line";
             fillColor = null;
 
