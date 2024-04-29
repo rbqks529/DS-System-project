@@ -26,7 +26,6 @@ public class CMClientApp {
         public ArrayList<Shape> shapesList = new ArrayList<>();
         private String currentShape;
         private int xBegin, yBegin, xEnd, yEnd;
-        private String shapeType = "line";
         private Color lineColor = Color.BLACK;
         private Color fillColor = null;
         private String inputText = null;
