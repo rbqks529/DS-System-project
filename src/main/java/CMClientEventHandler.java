@@ -5,6 +5,7 @@ import kr.ac.konkuk.ccslab.cm.info.CMInfo;
 import kr.ac.konkuk.ccslab.cm.info.CMInteractionInfo;
 import kr.ac.konkuk.ccslab.cm.stub.CMClientStub;
 
+import java.util.ArrayList;
 import java.awt.*;
 
 public class CMClientEventHandler implements CMAppEventHandler {
@@ -183,10 +184,19 @@ public class CMClientEventHandler implements CMAppEventHandler {
 
 	private void processDummyEvent(CMEvent cme) {
 		CMDummyEvent due = (CMDummyEvent) cme;
-		String dummyInfo = due.getDummyInfo();
+		String shapeListString = due.getDummyInfo();
 
+		// 파이프 문자(|)로 분리하여 Shape 객체 생성
+		String[] shapeStrings = shapeListString.split("\\|");
+		ArrayList<Shape> shapeList = new ArrayList<>();
+		for (String shapeString : shapeStrings) {
+			if (!shapeString.isEmpty()) {
+				shapeList.add(Shape.createShapeFromString(shapeString));
+			}
+		}
 
-		m_client.drawingPanel.shapesList.add(Shape.createShapeFromString(dummyInfo));
+		// 클라이언트의 drawingPanel에 shapeList 적용
+		m_client.drawingPanel.shapesList = shapeList;
 		m_client.drawingPanel.repaint();
 
 	}

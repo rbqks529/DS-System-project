@@ -31,12 +31,15 @@ public class CMClientApp {
         private String inputText = null;
         private int currentThickness = 1;
         private boolean fillShape = false;
+        private FontMetrics fontMetrics;
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
             setBackground(Color.WHITE);
             currentShape = "line";
             fillColor = null;
+            Font font = new Font("돋움체", Font.CENTER_BASELINE, 40);
+            fontMetrics = getFontMetrics(font);
 
             // Buttons for selecting shapes
             JButton lineButton = new JButton("Line");
@@ -141,7 +144,15 @@ public class CMClientApp {
                     repaint();
                 }
             });
+        }
 
+        private Shape getShapeAtPoint(Point p) {
+            for (Shape shape : shapesList) {
+                if (shape.contains(p, fontMetrics)) {
+                    return shape;
+                }
+            }
+            return null;
         }
 
         @Override
@@ -383,12 +394,16 @@ public class CMClientApp {
     {
         CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
         CMUser myself = interInfo.getMyself();
-        String strInput = null;
 
         if(myself.getState() != CMInfo.CM_SESSION_JOIN)
         {
             printMessage("You should join a session and a group!\n");
             return;
+        }
+
+        StringBuilder shapeListString = new StringBuilder();
+        for(Shape shape : drawingPanel.shapesList) {
+            shapeListString.append(shape.toString()).append("|");
         }
 
         printMessage("draw message\n");
@@ -399,7 +414,7 @@ public class CMClientApp {
         CMDummyEvent due = new CMDummyEvent();
         due.setHandlerSession(myself.getCurrentSession());
         due.setHandlerGroup(myself.getCurrentGroup());
-        due.setDummyInfo(message);
+        due.setDummyInfo(shapeListString.toString());
         m_clientStub.cast(due, myself.getCurrentSession(), myself.getCurrentGroup());
 
         printMessage("======\n");

@@ -75,6 +75,29 @@ public class Shape {
 		}
 	}
 
+	public boolean contains(Point p, FontMetrics fontMetrics) {
+		Rectangle bounds;
+		if (type.equals("line")) {
+			bounds = new Rectangle(Math.min(startPoint.x, endPoint.x), Math.min(startPoint.y, endPoint.y),
+					Math.abs(endPoint.x - startPoint.x), Math.abs(endPoint.y - startPoint.y));
+		} else if (type.equals("circle")) {
+			int radius = (int) Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) +
+					Math.pow(endPoint.y - startPoint.y, 2));
+			bounds = new Rectangle(startPoint.x - radius, startPoint.y - radius, radius * 2, radius * 2);
+		} else if (type.equals("rectangle")) {
+			int width = Math.abs(endPoint.x - startPoint.x);
+			int height = Math.abs(endPoint.y - startPoint.y);
+			int startX = Math.min(startPoint.x, endPoint.x);
+			int startY = Math.min(startPoint.y, endPoint.y);
+			bounds = new Rectangle(startX, startY, width, height);
+		} else { // text
+			int textWidth = fontMetrics.stringWidth(text);
+			int textHeight = fontMetrics.getHeight();
+			bounds = new Rectangle(startPoint.x, startPoint.y - textHeight / 2, textWidth, textHeight);
+		}
+		return bounds.contains(p);
+	}
+
 	@Override
 	public String toString() {
 		return type + "," + startPoint.x + "," + startPoint.y + "," + endPoint.x + "," + endPoint.y + ","
