@@ -75,6 +75,23 @@ public class Shape {
 		}
 	}
 
+
+	public void setLineColor(Color lineColor) {
+		this.lineColor = lineColor;
+	}
+
+	public void setFillColor(Color fillColor) {
+		this.fillColor = fillColor;
+	}
+
+	public void setThickness(int thickness) {
+		this.thickness = thickness;
+	}
+
+	public void setFillShape(boolean fill) {
+		this.fill = fill;
+	}
+
 	public boolean contains(Point p, FontMetrics fontMetrics) {
 		Rectangle bounds;
 		if (type.equals("line")) {

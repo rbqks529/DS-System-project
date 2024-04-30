@@ -32,6 +32,8 @@ public class CMClientApp {
         private int currentThickness = 1;
         private boolean fillShape = false;
         private FontMetrics fontMetrics;
+        private Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
+        private boolean customizeMode = false;
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
@@ -53,27 +55,53 @@ public class CMClientApp {
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
             textButton.addActionListener(e -> currentShape = "text");
 
+            JToggleButton customizeButton = new JToggleButton("Customize");
+            customizeButton.addActionListener(e -> {
+                customizeMode = customizeButton.isSelected();
+                selectedShape = null; // Customize 모드 전환 시 선택된 Shape 초기화
+            });
+
+
             JPanel shapeButtonPanel = new JPanel();
             shapeButtonPanel.add(lineButton);
             shapeButtonPanel.add(circleButton);
             shapeButtonPanel.add(rectangleButton);
             shapeButtonPanel.add(textButton);
             add(shapeButtonPanel, BorderLayout.NORTH);
+            shapeButtonPanel.add(customizeButton);
 
             // Buttons for selecting line and fill colors
             JButton lineColorButton = new JButton("Line & Text Color");
             JButton fillColorButton = new JButton("Fill Color");
 
+            // lineColorButton, fillColorButton 리스너 수정
             lineColorButton.addActionListener(e -> {
-                lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
+                if (customizeMode && selectedShape != null) {
+                    lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
+                    selectedShape.setLineColor(lineColor);
+                    repaint();
+                    testDummyEvent("전송");
+                } else {
+                    lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
+                }
             });
+
             fillColorButton.addActionListener(e -> {
-                // 사용자가 색상 선택 대화 상자를 열어 색상을 선택
-                Color newFillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
-                // 사용자가 "OK"를 눌렀을 때만 fillShape를 true로 설정
-                if(newFillColor != null) {
-                    fillColor = newFillColor;
-                    fillShape = true;
+                if (customizeMode && selectedShape != null) {
+                    Color newFillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
+                    if (newFillColor != null) {
+                        fillColor = newFillColor;
+                        selectedShape.setFillColor(fillColor);
+                        selectedShape.setFillShape(true);
+                        repaint();
+                        testDummyEvent("전송");
+                    }
+                } else {
+                    Color newFillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
+                    if (newFillColor != null) {
+                        fillColor = newFillColor;
+                        fillShape = true;
+                    }
                 }
             });
 
@@ -87,7 +115,17 @@ public class CMClientApp {
             thicknessSlider.setMajorTickSpacing(1);
             thicknessSlider.setPaintTicks(true);
             thicknessSlider.setPaintLabels(true);
-            thicknessSlider.addChangeListener(e -> currentThickness = thicknessSlider.getValue());
+
+            // thicknessSlider 리스너 추가
+            thicknessSlider.addChangeListener(e -> {
+                if (customizeMode && selectedShape != null) {
+                    int newThickness = thicknessSlider.getValue();
+                    selectedShape.setThickness(newThickness);
+                    repaint();
+                } else {
+                    currentThickness = thicknessSlider.getValue();
+                }
+            });
 
             JPanel thicknessPanel = new JPanel();
             thicknessPanel.add(new JLabel("Thickness:"));
@@ -101,20 +139,26 @@ public class CMClientApp {
                     if (!loggedIn)
                         return;
 
-                    if(currentShape.equals("text")) {
-                        xBegin = e.getX();
-                        yBegin = e.getY();
-                        inputText = JOptionPane.showInputDialog("Enter text:");
-                        if(inputText != null && !inputText.isEmpty()) {
-                            Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
-                                    lineColor, fillColor, currentThickness, fillShape, inputText);
-                            shapesList.add(shape);
-                            repaint();
-                            testDummyEvent(shape.toString());
-                        }
+                    if (customizeMode) {
+                        Point p = e.getPoint();
+                        selectedShape = getShapeAtPoint(p);
+                        repaint();
                     } else {
-                        xBegin = e.getX();
-                        yBegin = e.getY();
+                        if (currentShape.equals("text")) {
+                            xBegin = e.getX();
+                            yBegin = e.getY();
+                            inputText = JOptionPane.showInputDialog("Enter text:");
+                            if (inputText != null && !inputText.isEmpty()) {
+                                Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
+                                        lineColor, fillColor, currentThickness, fillShape, inputText);
+                                shapesList.add(shape);
+                                repaint();
+                                testDummyEvent(shape.toString());
+                            }
+                        } else {
+                            xBegin = e.getX();
+                            yBegin = e.getY();
+                        }
                     }
                 }
 
@@ -123,17 +167,19 @@ public class CMClientApp {
                     if (!loggedIn)
                         return;
 
-                    xEnd = e.getX();
-                    yEnd = e.getY();
-                    Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
-                            lineColor, fillColor, currentThickness, fillShape, inputText);
-                    shapesList.add(shape);
-                    repaint();
-                    testDummyEvent(shape.toString());
+                    if (!customizeMode) {
+                        xEnd = e.getX();
+                        yEnd = e.getY();
+                        Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
+                                lineColor, fillColor, currentThickness, fillShape, inputText);
+                        shapesList.add(shape);
+                        repaint();
+                        testDummyEvent(shape.toString());
+                    } 
                 }
             });
 
-            addMouseMotionListener(new MouseMotionAdapter() {
+            /*addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent e) {
                     if (!loggedIn)
@@ -143,7 +189,7 @@ public class CMClientApp {
                     yEnd = e.getY();
                     repaint();
                 }
-            });
+            });*/
         }
 
         private Shape getShapeAtPoint(Point p) {
@@ -163,6 +209,13 @@ public class CMClientApp {
             for (Shape shape : shapesList) {
                 g2d.setColor(shape.getLineColor());
                 g2d.setStroke(new BasicStroke(shape.getThickness()));
+
+                // 선택된 Shape일 경우 더 굵은 선으로 그리기
+                if (shape == selectedShape) {
+                    g2d.setStroke(new BasicStroke(shape.getThickness() + 2));
+                    g2d.setColor(Color.RED); // 선택된 Shape의 테두리 색상을 빨간색으로 설정
+                }
+
 
                 switch (shape.getType()) {
                     case "line":
