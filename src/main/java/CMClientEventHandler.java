@@ -5,12 +5,14 @@ import kr.ac.konkuk.ccslab.cm.info.CMInfo;
 import kr.ac.konkuk.ccslab.cm.info.CMInteractionInfo;
 import kr.ac.konkuk.ccslab.cm.stub.CMClientStub;
 
+import java.util.ArrayList;
 import java.awt.*;
 
 public class CMClientEventHandler implements CMAppEventHandler {
     private CMClientStub m_clientStub;
 	private CMClientApp m_client;
 	private long m_lStartTime;
+
 	public void setStartTime(long time)
 	{
 		m_lStartTime = time;
@@ -50,6 +52,15 @@ public class CMClientEventHandler implements CMAppEventHandler {
 		{
 			case CMDataEvent.NEW_USER:
 				printMessage("["+de.getUserName()+"] enters WhiteBoard group\n");
+
+				CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
+				// 로그인 성공 후 기존 클라이언트의 그림 정보를 요청
+				CMDummyEvent due = new CMDummyEvent();
+				due.setHandlerSession(interInfo.getMyself().getCurrentSession());
+				due.setHandlerGroup(interInfo.getMyself().getCurrentGroup());
+				due.setDummyInfo("request");
+				m_clientStub.cast(due, interInfo.getMyself().getCurrentSession(), interInfo.getMyself().getCurrentGroup());
+
 				break;
 			case CMDataEvent.REMOVE_USER:
 				printMessage("["+de.getUserName()+"] leaves WhiteBoard group\n");
@@ -66,6 +77,7 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			case CMSessionEvent.LOGIN_ACK:
 				lDelay = System.currentTimeMillis() - m_lStartTime;
 				printMessage("LOGIN_ACK delay: "+lDelay+" ms.\n");
+
 				if(se.isValidUser() == 0)
 				{
 					printMessage("This client fails authentication by the default server!\n");
@@ -79,6 +91,13 @@ public class CMClientEventHandler implements CMAppEventHandler {
 					printMessage("This client successfully logs in to the default server.\n");
 					CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
 					m_client.setButtonsAccordingToClientState();
+
+					// 로그인 성공 후 기존 클라이언트의 그림 정보를 요청
+					CMDummyEvent due = new CMDummyEvent();
+					due.setHandlerSession(interInfo.getMyself().getCurrentSession());
+					due.setHandlerGroup(interInfo.getMyself().getCurrentGroup());
+					due.setDummyInfo("request");
+					m_clientStub.cast(due, interInfo.getMyself().getCurrentSession(), interInfo.getMyself().getCurrentGroup());
 				}
 				break;
 			case CMSessionEvent.RESPONSE_SESSION_INFO:
@@ -185,8 +204,34 @@ public class CMClientEventHandler implements CMAppEventHandler {
 		CMDummyEvent due = (CMDummyEvent) cme;
 		String dummyInfo = due.getDummyInfo();
 
-		m_client.drawingPanel.shapes.append(dummyInfo);
-		m_client.drawingPanel.repaint();
+		if (dummyInfo.equals("request")) {
+			// 그림 정보 요청일 경우, 현재 클라이언트의 그림 정보를 전송
+			StringBuilder shapeListString = new StringBuilder();
+			for (Shape shape : m_client.drawingPanel.shapesList) {
+				shapeListString.append(shape.toString()).append("|");
+			}
+			CMDummyEvent responseEvent = new CMDummyEvent();
+			responseEvent.setHandlerSession(due.getHandlerSession());
+			responseEvent.setHandlerGroup(due.getHandlerGroup());
+			responseEvent.setDummyInfo(shapeListString.toString());
+			m_clientStub.cast(responseEvent, due.getHandlerSession(), due.getHandlerGroup());
+
+		} else {
+			// 파이프 문자(|)로 분리하여 Shape 객체 생성
+			String[] shapeStrings = dummyInfo.split("\\|");
+			ArrayList<Shape> shapeList = new ArrayList<>();
+			for (String shapeString : shapeStrings) {
+				if (!shapeString.isEmpty()) {
+					shapeList.add(Shape.createShapeFromString(shapeString));
+				}
+			}
+
+			// 클라이언트의 drawingPanel에 shapeList 적용
+			m_client.drawingPanel.shapesList = shapeList;
+			m_client.drawingPanel.repaint();
+
+		}
 	}
 
 }
+
