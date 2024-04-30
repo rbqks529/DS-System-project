@@ -12,6 +12,8 @@ public class CMClientEventHandler implements CMAppEventHandler {
     private CMClientStub m_clientStub;
 	private CMClientApp m_client;
 	private long m_lStartTime;
+
+
 	public void setStartTime(long time)
 	{
 		m_lStartTime = time;
@@ -67,6 +69,7 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			case CMSessionEvent.LOGIN_ACK:
 				lDelay = System.currentTimeMillis() - m_lStartTime;
 				printMessage("LOGIN_ACK delay: "+lDelay+" ms.\n");
+
 				if(se.isValidUser() == 0)
 				{
 					printMessage("This client fails authentication by the default server!\n");

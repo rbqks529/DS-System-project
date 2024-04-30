@@ -32,7 +32,7 @@ public class CMClientApp {
         private int currentThickness = 1;
         private boolean fillShape = false;
         private FontMetrics fontMetrics;
-        private Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
+        public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
         private boolean customizeMode = false;
 
         public DrawingPanel() {
@@ -110,28 +110,28 @@ public class CMClientApp {
             colorButtonPanel.add(fillColorButton);
             add(colorButtonPanel, BorderLayout.SOUTH);
 
-            // Slider for selecting line thickness
-            JSlider thicknessSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 1);
-            thicknessSlider.setMajorTickSpacing(1);
-            thicknessSlider.setPaintTicks(true);
-            thicknessSlider.setPaintLabels(true);
+            Integer[] thicknessOptions = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}; // Thickness options
+            JComboBox<Integer> thicknessComboBox = new JComboBox<>(thicknessOptions);
+            thicknessComboBox.setSelectedItem(currentThickness);
 
-            // thicknessSlider 리스너 추가
-            thicknessSlider.addChangeListener(e -> {
+            thicknessComboBox.addActionListener(e ->  {
+
                 if (customizeMode && selectedShape != null) {
-                    int newThickness = thicknessSlider.getValue();
+                    // Update selected shape's thickness
+                    int newThickness = (int) thicknessComboBox.getSelectedItem();
                     selectedShape.setThickness(newThickness);
                     repaint();
+                    testDummyEvent("전송");
                 } else {
-                    currentThickness = thicknessSlider.getValue();
+                    currentThickness = (int) thicknessComboBox.getSelectedItem();
                 }
+
             });
 
             JPanel thicknessPanel = new JPanel();
             thicknessPanel.add(new JLabel("Thickness:"));
-            thicknessPanel.add(thicknessSlider);
+            thicknessPanel.add(thicknessComboBox);
             add(thicknessPanel, BorderLayout.CENTER);
-
             // Mouse event handlers
             addMouseListener(new MouseAdapter() {
                 @Override
