@@ -26,10 +26,10 @@ public class CMClientApp {
         public ArrayList<Shape> shapesList = new ArrayList<>();
         private String currentShape;
         private int xBegin, yBegin, xEnd, yEnd;
-        private Color lineColor = Color.BLACK;
-        private Color fillColor = null;
+        public Color lineColor = Color.BLACK;
+        public Color fillColor = null;
         private String inputText = null;
-        private int currentThickness = 1;
+        public int currentThickness = 1;
         private boolean fillShape = false;
         private FontMetrics fontMetrics;
         public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
@@ -153,7 +153,7 @@ public class CMClientApp {
                                         lineColor, fillColor, currentThickness, fillShape, inputText);
                                 shapesList.add(shape);
                                 repaint();
-                                testDummyEvent(shape.toString());
+                                testDummyEvent("도형 전송");
                             }
                         } else {
                             xBegin = e.getX();
@@ -174,22 +174,69 @@ public class CMClientApp {
                                 lineColor, fillColor, currentThickness, fillShape, inputText);
                         shapesList.add(shape);
                         repaint();
-                        testDummyEvent(shape.toString());
+                        testDummyEvent("도형 전송");
                     } 
                 }
             });
 
-            /*addMouseMotionListener(new MouseMotionAdapter() {
+            addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent e) {
                     if (!loggedIn)
                         return;
 
-                    xEnd = e.getX();
-                    yEnd = e.getY();
-                    repaint();
+                    if (!customizeMode) {
+                        // xEnd = e.getX();
+                        // yEnd = e.getY();
+
+                        // 패널 초기화 및 현재 그려지고 있는 도형 그리기
+                        repaint();
+
+                        Graphics2D g2d = (Graphics2D) getGraphics();
+                        g2d.setColor(lineColor);
+                        g2d.setStroke(new BasicStroke(currentThickness));
+
+                        switch (currentShape) {
+                            case "line":
+                                g2d.drawLine(xBegin, yBegin, e.getX(), e.getY());
+                                break;
+                            case "circle":
+                                int radius = (int) Math.sqrt(Math.pow(e.getX() - xBegin, 2) + Math.pow(e.getY() - yBegin, 2));
+                                if (fillShape) {
+                                    g2d.setColor(fillColor);
+                                    g2d.fillOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
+                                    g2d.setColor(lineColor);
+                                }
+                                g2d.drawOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
+                                break;
+                            case "rectangle":
+                                int width = Math.abs(e.getX() - xBegin);
+                                int height = Math.abs(e.getY() - yBegin);
+                                int startX = Math.min(xBegin, e.getX());
+                                int startY = Math.min(yBegin, e.getY());
+                                if (fillShape) {
+                                    g2d.setColor(fillColor);
+                                    g2d.fillRect(startX, startY, width, height);
+                                    g2d.setColor(lineColor);
+                                }
+                                g2d.drawRect(startX, startY, width, height);
+                                break;
+                            case "text":
+                                // Text drawing not supported during mouse dragging
+                                break;
+                        }
+
+                        // Send a dummy event to other clients with the current shape being drawn
+                        testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+
+                        try {
+                            Thread.sleep(25); // 10 밀리초 대기
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
                 }
-            });*/
+            });
         }
 
         private Shape getShapeAtPoint(Point p) {
@@ -227,12 +274,10 @@ public class CMClientApp {
                                 Math.pow(shape.getEndPoint().y - shape.getStartPoint().y, 2));
                         if (shape.isFill()) {
                             g2d.setColor(shape.getFillColor());
-                            g2d.fillOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius,
-                                    radius * 2, radius * 2);
+                            g2d.fillOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius, radius * 2, radius * 2);
                         }
                         g2d.setColor(shape.getLineColor());
-                        g2d.drawOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius,
-                                radius * 2, radius * 2);
+                        g2d.drawOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius, radius * 2, radius * 2);
                         break;
                     case "rectangle":
                         int width = Math.abs(shape.getEndPoint().x - shape.getStartPoint().x);
@@ -443,31 +488,36 @@ public class CMClientApp {
     }
 
     //메세지를 보내기 위한 더비 이벤트 함수
-    private void testDummyEvent(String message)
-    {
+    private void testDummyEvent(String message) {
         CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
         CMUser myself = interInfo.getMyself();
 
-        if(myself.getState() != CMInfo.CM_SESSION_JOIN)
-        {
+        if (myself.getState() != CMInfo.CM_SESSION_JOIN) {
             printMessage("You should join a session and a group!\n");
             return;
         }
 
-        StringBuilder shapeListString = new StringBuilder();
-        for(Shape shape : drawingPanel.shapesList) {
-            shapeListString.append(shape.toString()).append("|");
-        }
-
         printMessage("draw message\n");
 
-        if(message == null)
+        if (message == null)
             return;
 
         CMDummyEvent due = new CMDummyEvent();
         due.setHandlerSession(myself.getCurrentSession());
         due.setHandlerGroup(myself.getCurrentGroup());
-        due.setDummyInfo(shapeListString.toString());
+
+        if (message.startsWith("DRAW|")) {
+            // 그림이 그려지는 과정일 경우
+            due.setDummyInfo(message);
+        } else {
+            // 최종 그림 정보일 경우
+            StringBuilder shapeListString = new StringBuilder();
+            for (Shape shape : drawingPanel.shapesList) {
+                shapeListString.append(shape.toString()).append("|");
+            }
+            due.setDummyInfo(shapeListString.toString());
+        }
+
         m_clientStub.cast(due, myself.getCurrentSession(), myself.getCurrentGroup());
 
         printMessage("======\n");
