@@ -186,8 +186,8 @@ public class CMClientApp {
                         return;
 
                     if (!customizeMode) {
-                        // xEnd = e.getX();
-                        // yEnd = e.getY();
+                        xEnd = e.getX();
+                        yEnd = e.getY();
 
                         // 패널 초기화 및 현재 그려지고 있는 도형 그리기
                         repaint();
