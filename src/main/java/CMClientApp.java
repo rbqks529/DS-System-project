@@ -9,6 +9,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.util.ArrayList;
 
 public class CMClientApp {
@@ -18,6 +19,8 @@ public class CMClientApp {
     private JTextPane consoleTextPane = new JTextPane();
     private JButton loginButton = new JButton("Login");
     private JButton logoutButton = new JButton("Logout");
+    private JButton saveButton = new JButton("Save");
+    private JButton loadButton = new JButton("Load");
     private boolean loggedIn = false;
 
     // Drawing panel for shapes
@@ -239,6 +242,8 @@ public class CMClientApp {
             });
         }
 
+
+
         private Shape getShapeAtPoint(Point p) {
             for (Shape shape : shapesList) {
                 if (shape.contains(p, fontMetrics)) {
@@ -246,6 +251,33 @@ public class CMClientApp {
                 }
             }
             return null;
+        }
+
+        // shapesList를 텍스트 파일로 저장하는 메서드
+        public void saveShapesToFile(String fileName) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                for (Shape shape : shapesList) {
+                    writer.write(shape.toString());
+                    writer.newLine();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 텍스트 파일에서 shapesList를 로드하는 메서드
+        public void loadShapesFromFile(String fileName) {
+            shapesList.clear(); // 기존 shapesList 초기화
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Shape shape = Shape.createShapeFromString(line);
+                    shapesList.add(shape);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            repaint(); // 패널 다시 그리기
         }
 
         @Override
@@ -385,6 +417,27 @@ public class CMClientApp {
             }
         });
 
+        saveButton.setPreferredSize(new Dimension(70, 30));
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // shapesList 내용을 텍스트 파일로 저장
+                saveShapes();
+            }
+        });
+
+        loadButton.setPreferredSize(new Dimension(70, 30));
+        loadButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 텍스트 파일에서 shapesList 내용 로드
+                loadShapes();
+                testDummyEvent("동기화");
+            }
+        });
+
+        buttonPanel.add(saveButton, BorderLayout.WEST);
+        buttonPanel.add(loadButton, BorderLayout.WEST);
         buttonPanel.add(loginButton);
         buttonPanel.add(logoutButton);
         whiteboardFrame.add(buttonPanel, BorderLayout.NORTH);
@@ -394,6 +447,14 @@ public class CMClientApp {
         // 프레임 위치 설정 및 표시
         whiteboardFrame.setLocationRelativeTo(null); // 화면 중앙에 위치
         whiteboardFrame.setVisible(true);
+    }
+
+    private void saveShapes() {
+        drawingPanel.saveShapesToFile("shapes.txt");
+    }
+
+    private void loadShapes() {
+        drawingPanel.loadShapesFromFile("shapes.txt");
     }
 
     //로그인 함수
