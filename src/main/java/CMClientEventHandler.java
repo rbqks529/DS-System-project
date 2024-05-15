@@ -216,6 +216,59 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			responseEvent.setDummyInfo(shapeListString.toString());
 			m_clientStub.cast(responseEvent, due.getHandlerSession(), due.getHandlerGroup());
 
+		} else if (dummyInfo.startsWith("DRAW|")) {
+			// 그림이 그려지는 과정일 경우
+			String[] parts = dummyInfo.split("\\|");
+			String shapeType = parts[1];
+			int xBegin = Integer.parseInt(parts[2]);
+			int yBegin = Integer.parseInt(parts[3]);
+			int xEnd = Integer.parseInt(parts[4]);
+			int yEnd = Integer.parseInt(parts[5]);
+			Color lineColor = new Color(Integer.parseInt(parts[6]));
+			Color fillColor = new Color(Integer.parseInt(parts[7]));
+			int thickness = Integer.parseInt(parts[8]);
+
+			// 현재 클라이언트의 drawingPanel 초기화
+			m_client.drawingPanel.repaint();
+
+			// 현재 그려지고 있는 도형 그리기
+			Graphics2D g2d = (Graphics2D) m_client.drawingPanel.getGraphics();
+			g2d.setColor(lineColor);
+			g2d.setStroke(new BasicStroke(thickness));
+
+			switch (shapeType) {
+				case "line":
+					g2d.drawLine(xBegin, yBegin, xEnd, yEnd);
+					break;
+				case "circle":
+					int radius = (int) Math.sqrt(Math.pow(xEnd - xBegin, 2) + Math.pow(yEnd - yBegin, 2));
+					if (fillColor.getRGB() != 0) {
+						g2d.setColor(fillColor);
+						g2d.fillOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
+						g2d.setColor(lineColor);
+					}
+					g2d.drawOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
+					break;
+				case "rectangle":
+					int width = Math.abs(xEnd - xBegin);
+					int height = Math.abs(yEnd - yBegin);
+					int startX = Math.min(xBegin, xEnd);
+					int startY = Math.min(yBegin, yEnd);
+					if (fillColor.getRGB() != 0) {
+						g2d.setColor(fillColor);
+						g2d.fillRect(startX, startY, width, height);
+						g2d.setColor(lineColor);
+					}
+					g2d.drawRect(startX, startY, width, height);
+					break;
+			}
+
+			try {
+				Thread.sleep(10); // 10 밀리초 대기
+			} catch (InterruptedException ex) {
+				ex.printStackTrace();
+			}
+
 		} else {
 			// 파이프 문자(|)로 분리하여 Shape 객체 생성
 			String[] shapeStrings = dummyInfo.split("\\|");
@@ -229,7 +282,6 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			// 클라이언트의 drawingPanel에 shapeList 적용
 			m_client.drawingPanel.shapesList = shapeList;
 			m_client.drawingPanel.repaint();
-
 		}
 	}
 
