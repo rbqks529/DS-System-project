@@ -9,6 +9,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.util.ArrayList;
 
 public class CMClientApp {
@@ -18,6 +19,8 @@ public class CMClientApp {
     private JTextPane consoleTextPane = new JTextPane();
     private JButton loginButton = new JButton("Login");
     private JButton logoutButton = new JButton("Logout");
+    private JButton saveButton = new JButton("Save");
+    private JButton loadButton = new JButton("Load");
     private boolean loggedIn = false;
 
     // Drawing panel for shapes
@@ -26,10 +29,10 @@ public class CMClientApp {
         public ArrayList<Shape> shapesList = new ArrayList<>();
         private String currentShape;
         private int xBegin, yBegin, xEnd, yEnd;
-        private Color lineColor = Color.BLACK;
-        private Color fillColor = null;
+        public Color lineColor = Color.BLACK;
+        public Color fillColor = null;
         private String inputText = null;
-        private int currentThickness = 1;
+        public int currentThickness = 1;
         private boolean fillShape = false;
         private FontMetrics fontMetrics;
         public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
@@ -153,7 +156,7 @@ public class CMClientApp {
                                         lineColor, fillColor, currentThickness, fillShape, inputText);
                                 shapesList.add(shape);
                                 repaint();
-                                testDummyEvent(shape.toString());
+                                testDummyEvent("도형 전송");
                             }
                         } else {
                             xBegin = e.getX();
@@ -174,12 +177,12 @@ public class CMClientApp {
                                 lineColor, fillColor, currentThickness, fillShape, inputText);
                         shapesList.add(shape);
                         repaint();
-                        testDummyEvent(shape.toString());
-                    } 
+                        testDummyEvent("도형 전송");
+                    }
                 }
             });
 
-            /*addMouseMotionListener(new MouseMotionAdapter() {
+             /*addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent e) {
                     if (!loggedIn)
@@ -192,6 +195,7 @@ public class CMClientApp {
             });*/
         }
 
+        
         private Shape getShapeAtPoint(Point p) {
             for (Shape shape : shapesList) {
                 if (shape.contains(p, fontMetrics)) {
@@ -199,6 +203,33 @@ public class CMClientApp {
                 }
             }
             return null;
+        }
+
+        // shapesList를 텍스트 파일로 저장하는 메서드
+        public void saveShapesToFile(String fileName) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                for (Shape shape : shapesList) {
+                    writer.write(shape.toString());
+                    writer.newLine();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 텍스트 파일에서 shapesList를 로드하는 메서드
+        public void loadShapesFromFile(String fileName) {
+            shapesList.clear(); // 기존 shapesList 초기화
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Shape shape = Shape.createShapeFromString(line);
+                    shapesList.add(shape);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            repaint(); // 패널 다시 그리기
         }
 
         @Override
@@ -216,7 +247,6 @@ public class CMClientApp {
                     g2d.setColor(Color.RED); // 선택된 Shape의 테두리 색상을 빨간색으로 설정
                 }
 
-
                 switch (shape.getType()) {
                     case "line":
                         g2d.drawLine(shape.getStartPoint().x, shape.getStartPoint().y,
@@ -227,12 +257,10 @@ public class CMClientApp {
                                 Math.pow(shape.getEndPoint().y - shape.getStartPoint().y, 2));
                         if (shape.isFill()) {
                             g2d.setColor(shape.getFillColor());
-                            g2d.fillOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius,
-                                    radius * 2, radius * 2);
+                            g2d.fillOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius, radius * 2, radius * 2);
                         }
                         g2d.setColor(shape.getLineColor());
-                        g2d.drawOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius,
-                                radius * 2, radius * 2);
+                        g2d.drawOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius, radius * 2, radius * 2);
                         break;
                     case "rectangle":
                         int width = Math.abs(shape.getEndPoint().x - shape.getStartPoint().x);
@@ -340,6 +368,27 @@ public class CMClientApp {
             }
         });
 
+        saveButton.setPreferredSize(new Dimension(70, 30));
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // shapesList 내용을 텍스트 파일로 저장
+                saveShapes();
+            }
+        });
+
+        loadButton.setPreferredSize(new Dimension(70, 30));
+        loadButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 텍스트 파일에서 shapesList 내용 로드
+                loadShapes();
+                testDummyEvent("동기화");
+            }
+        });
+
+        buttonPanel.add(saveButton, BorderLayout.WEST);
+        buttonPanel.add(loadButton, BorderLayout.WEST);
         buttonPanel.add(loginButton);
         buttonPanel.add(logoutButton);
         whiteboardFrame.add(buttonPanel, BorderLayout.NORTH);
@@ -349,6 +398,16 @@ public class CMClientApp {
         // 프레임 위치 설정 및 표시
         whiteboardFrame.setLocationRelativeTo(null); // 화면 중앙에 위치
         whiteboardFrame.setVisible(true);
+    }
+
+    private void saveShapes() {
+        drawingPanel.saveShapesToFile("shapes.txt");
+        printMessage("그림 저장 완료");
+    }
+
+    private void loadShapes() {
+        drawingPanel.loadShapesFromFile("shapes.txt");
+        printMessage("그림 불러오기 완료");
     }
 
     //로그인 함수
@@ -472,6 +531,7 @@ public class CMClientApp {
 
         printMessage("======\n");
     }
+
 
     public static void main(String[] args) {
         CMClientApp client = new CMClientApp();

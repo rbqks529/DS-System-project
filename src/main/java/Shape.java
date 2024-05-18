@@ -62,6 +62,10 @@ public class Shape {
 		return thickness;
 	}
 
+	public void setEndPoint(Point p) {
+		this.endPoint = p;
+	}
+
 	public boolean isFill() {
 		return fill;
 	}
