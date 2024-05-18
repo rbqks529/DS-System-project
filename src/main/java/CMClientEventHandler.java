@@ -216,7 +216,30 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			responseEvent.setDummyInfo(shapeListString.toString());
 			m_clientStub.cast(responseEvent, due.getHandlerSession(), due.getHandlerGroup());
 
-		} else {
+		} else if (dummyInfo.startsWith("DRAW|")) {
+			// 그림이 그려지는 과정일 경우
+			String[] parts = dummyInfo.split("\\|");
+			String shapeType = parts[1];
+			int xBegin = Integer.parseInt(parts[2]);
+			int yBegin = Integer.parseInt(parts[3]);
+			int xEnd = Integer.parseInt(parts[4]);
+			int yEnd = Integer.parseInt(parts[5]);
+			Color lineColor = new Color(Integer.parseInt(parts[6]));
+			Color fillColor = new Color(Integer.parseInt(parts[7]));
+			int thickness = Integer.parseInt(parts[8]);
+
+			m_client.drawingPanel.currentShape = shapeType;
+			m_client.drawingPanel.currentThickness = thickness;
+			m_client.drawingPanel.lineColor = lineColor;
+			m_client.drawingPanel.xBegin = xBegin;
+			m_client.drawingPanel.yBegin = yBegin;
+			m_client.drawingPanel.xEnd = xEnd;
+			m_client.drawingPanel.yEnd = yEnd;
+
+			// 현재 클라이언트의 drawingPanel 초기화
+			m_client.drawingPanel.repaint();
+
+			} else {
 			// 파이프 문자(|)로 분리하여 Shape 객체 생성
 			String[] shapeStrings = dummyInfo.split("\\|");
 			ArrayList<Shape> shapeList = new ArrayList<>();

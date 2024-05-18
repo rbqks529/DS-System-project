@@ -27,8 +27,8 @@ public class CMClientApp {
     public class DrawingPanel extends JPanel {
         // ArrayList to store shapes
         public ArrayList<Shape> shapesList = new ArrayList<>();
-        private String currentShape;
-        private int xBegin, yBegin, xEnd, yEnd;
+        public String currentShape;
+        public int xBegin, yBegin, xEnd, yEnd;
         public Color lineColor = Color.BLACK;
         public Color fillColor = null;
         private String inputText = null;
@@ -182,20 +182,24 @@ public class CMClientApp {
                 }
             });
 
-             /*addMouseMotionListener(new MouseMotionAdapter() {
+            addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent e) {
                     if (!loggedIn)
                         return;
 
-                    xEnd = e.getX();
-                    yEnd = e.getY();
-                    repaint();
+                    if (!customizeMode) {
+                        xEnd = e.getX();
+                        yEnd = e.getY();
+
+                        // Send a dummy event to other clients with the current shape being drawn
+                        testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+                    }
                 }
-            });*/
+            });
         }
 
-        
+
         private Shape getShapeAtPoint(Point p) {
             for (Shape shape : shapesList) {
                 if (shape.contains(p, fontMetrics)) {
@@ -278,6 +282,29 @@ public class CMClientApp {
                         g2d.setFont(new Font("돋움체", Font.CENTER_BASELINE, 40));
                         FontMetrics fontMetrics = g2d.getFontMetrics();
                         g2d.drawString(shape.getText(), shape.getStartPoint().x, shape.getStartPoint().y); // Text position adjusted to be centered
+                        break;
+                }
+            }
+
+            // 현재 그리고 있는 도형을 그립니다.
+            if (currentShape != null) {
+                g2d.setColor(lineColor);
+                g2d.setStroke(new BasicStroke(currentThickness));
+
+                switch (currentShape) {
+                    case "line":
+                        g2d.drawLine(xBegin, yBegin, xEnd, yEnd);
+                        break;
+                    case "circle":
+                        int radius = (int) Math.sqrt(Math.pow(xEnd - xBegin, 2) + Math.pow(yEnd - yBegin, 2));
+                        g2d.drawOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
+                        break;
+                    case "rectangle":
+                        int width = Math.abs(xEnd - xBegin);
+                        int height = Math.abs(yEnd - yBegin);
+                        int startX = Math.min(xBegin, xEnd);
+                        int startY = Math.min(yBegin, yEnd);
+                        g2d.drawRect(startX, startY, width, height);
                         break;
                 }
             }
@@ -387,8 +414,8 @@ public class CMClientApp {
             }
         });
 
-        buttonPanel.add(saveButton, BorderLayout.WEST);
-        buttonPanel.add(loadButton, BorderLayout.WEST);
+        buttonPanel.add(saveButton);
+        buttonPanel.add(loadButton);
         buttonPanel.add(loginButton);
         buttonPanel.add(logoutButton);
         whiteboardFrame.add(buttonPanel, BorderLayout.NORTH);
@@ -502,31 +529,36 @@ public class CMClientApp {
     }
 
     //메세지를 보내기 위한 더비 이벤트 함수
-    private void testDummyEvent(String message)
-    {
+    private void testDummyEvent(String message) {
         CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
         CMUser myself = interInfo.getMyself();
 
-        if(myself.getState() != CMInfo.CM_SESSION_JOIN)
-        {
+        if (myself.getState() != CMInfo.CM_SESSION_JOIN) {
             printMessage("You should join a session and a group!\n");
             return;
         }
 
-        StringBuilder shapeListString = new StringBuilder();
-        for(Shape shape : drawingPanel.shapesList) {
-            shapeListString.append(shape.toString()).append("|");
-        }
-
         printMessage("draw message\n");
 
-        if(message == null)
+        if (message == null)
             return;
 
         CMDummyEvent due = new CMDummyEvent();
         due.setHandlerSession(myself.getCurrentSession());
         due.setHandlerGroup(myself.getCurrentGroup());
-        due.setDummyInfo(shapeListString.toString());
+
+        if (message.startsWith("DRAW|")) {
+            // 그림이 그려지는 과정일 경우
+            due.setDummyInfo(message);
+        } else {
+            // 최종 그림 정보일 경우
+            StringBuilder shapeListString = new StringBuilder();
+            for (Shape shape : drawingPanel.shapesList) {
+                shapeListString.append(shape.toString()).append("|");
+            }
+            due.setDummyInfo(shapeListString.toString());
+        }
+
         m_clientStub.cast(due, myself.getCurrentSession(), myself.getCurrentGroup());
 
         printMessage("======\n");
