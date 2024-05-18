@@ -9,6 +9,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.util.ArrayList;
 
 public class CMClientApp {
@@ -18,6 +19,8 @@ public class CMClientApp {
     private JTextPane consoleTextPane = new JTextPane();
     private JButton loginButton = new JButton("Login");
     private JButton logoutButton = new JButton("Logout");
+    private JButton saveButton = new JButton("Save");
+    private JButton loadButton = new JButton("Load");
     private boolean loggedIn = false;
 
     // Drawing panel for shapes
@@ -26,12 +29,14 @@ public class CMClientApp {
         public ArrayList<Shape> shapesList = new ArrayList<>();
         private String currentShape;
         private int xBegin, yBegin, xEnd, yEnd;
-        private Color lineColor = Color.BLACK;
-        private Color fillColor = null;
+        public Color lineColor = Color.BLACK;
+        public Color fillColor = null;
         private String inputText = null;
-        private int currentThickness = 1;
+        public int currentThickness = 1;
         private boolean fillShape = false;
         private FontMetrics fontMetrics;
+        public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
+        private boolean customizeMode = false;
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
@@ -53,27 +58,53 @@ public class CMClientApp {
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
             textButton.addActionListener(e -> currentShape = "text");
 
+            JToggleButton customizeButton = new JToggleButton("Customize");
+            customizeButton.addActionListener(e -> {
+                customizeMode = customizeButton.isSelected();
+                selectedShape = null; // Customize 모드 전환 시 선택된 Shape 초기화
+            });
+
+
             JPanel shapeButtonPanel = new JPanel();
             shapeButtonPanel.add(lineButton);
             shapeButtonPanel.add(circleButton);
             shapeButtonPanel.add(rectangleButton);
             shapeButtonPanel.add(textButton);
             add(shapeButtonPanel, BorderLayout.NORTH);
+            shapeButtonPanel.add(customizeButton);
 
             // Buttons for selecting line and fill colors
             JButton lineColorButton = new JButton("Line & Text Color");
             JButton fillColorButton = new JButton("Fill Color");
 
+            // lineColorButton, fillColorButton 리스너 수정
             lineColorButton.addActionListener(e -> {
-                lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
+                if (customizeMode && selectedShape != null) {
+                    lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
+                    selectedShape.setLineColor(lineColor);
+                    repaint();
+                    testDummyEvent("전송");
+                } else {
+                    lineColor = JColorChooser.showDialog(this, "Choose Line Color", lineColor);
+                }
             });
+
             fillColorButton.addActionListener(e -> {
-                // 사용자가 색상 선택 대화 상자를 열어 색상을 선택
-                Color newFillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
-                // 사용자가 "OK"를 눌렀을 때만 fillShape를 true로 설정
-                if(newFillColor != null) {
-                    fillColor = newFillColor;
-                    fillShape = true;
+                if (customizeMode && selectedShape != null) {
+                    Color newFillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
+                    if (newFillColor != null) {
+                        fillColor = newFillColor;
+                        selectedShape.setFillColor(fillColor);
+                        selectedShape.setFillShape(true);
+                        repaint();
+                        testDummyEvent("전송");
+                    }
+                } else {
+                    Color newFillColor = JColorChooser.showDialog(this, "Choose Fill Color", fillColor);
+                    if (newFillColor != null) {
+                        fillColor = newFillColor;
+                        fillShape = true;
+                    }
                 }
             });
 
@@ -82,18 +113,28 @@ public class CMClientApp {
             colorButtonPanel.add(fillColorButton);
             add(colorButtonPanel, BorderLayout.SOUTH);
 
-            // Slider for selecting line thickness
-            JSlider thicknessSlider = new JSlider(JSlider.HORIZONTAL, 1, 10, 1);
-            thicknessSlider.setMajorTickSpacing(1);
-            thicknessSlider.setPaintTicks(true);
-            thicknessSlider.setPaintLabels(true);
-            thicknessSlider.addChangeListener(e -> currentThickness = thicknessSlider.getValue());
+            Integer[] thicknessOptions = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}; // Thickness options
+            JComboBox<Integer> thicknessComboBox = new JComboBox<>(thicknessOptions);
+            thicknessComboBox.setSelectedItem(currentThickness);
+
+            thicknessComboBox.addActionListener(e ->  {
+
+                if (customizeMode && selectedShape != null) {
+                    // Update selected shape's thickness
+                    int newThickness = (int) thicknessComboBox.getSelectedItem();
+                    selectedShape.setThickness(newThickness);
+                    repaint();
+                    testDummyEvent("전송");
+                } else {
+                    currentThickness = (int) thicknessComboBox.getSelectedItem();
+                }
+
+            });
 
             JPanel thicknessPanel = new JPanel();
             thicknessPanel.add(new JLabel("Thickness:"));
-            thicknessPanel.add(thicknessSlider);
+            thicknessPanel.add(thicknessComboBox);
             add(thicknessPanel, BorderLayout.CENTER);
-
             // Mouse event handlers
             addMouseListener(new MouseAdapter() {
                 @Override
@@ -101,20 +142,26 @@ public class CMClientApp {
                     if (!loggedIn)
                         return;
 
-                    if(currentShape.equals("text")) {
-                        xBegin = e.getX();
-                        yBegin = e.getY();
-                        inputText = JOptionPane.showInputDialog("Enter text:");
-                        if(inputText != null && !inputText.isEmpty()) {
-                            Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
-                                    lineColor, fillColor, currentThickness, fillShape, inputText);
-                            shapesList.add(shape);
-                            repaint();
-                            testDummyEvent(shape.toString());
-                        }
+                    if (customizeMode) {
+                        Point p = e.getPoint();
+                        selectedShape = getShapeAtPoint(p);
+                        repaint();
                     } else {
-                        xBegin = e.getX();
-                        yBegin = e.getY();
+                        if (currentShape.equals("text")) {
+                            xBegin = e.getX();
+                            yBegin = e.getY();
+                            inputText = JOptionPane.showInputDialog("Enter text:");
+                            if (inputText != null && !inputText.isEmpty()) {
+                                Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
+                                        lineColor, fillColor, currentThickness, fillShape, inputText);
+                                shapesList.add(shape);
+                                repaint();
+                                testDummyEvent("도형 전송");
+                            }
+                        } else {
+                            xBegin = e.getX();
+                            yBegin = e.getY();
+                        }
                     }
                 }
 
@@ -123,13 +170,15 @@ public class CMClientApp {
                     if (!loggedIn)
                         return;
 
-                    xEnd = e.getX();
-                    yEnd = e.getY();
-                    Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
-                            lineColor, fillColor, currentThickness, fillShape, inputText);
-                    shapesList.add(shape);
-                    repaint();
-                    testDummyEvent(shape.toString());
+                    if (!customizeMode) {
+                        xEnd = e.getX();
+                        yEnd = e.getY();
+                        Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
+                                lineColor, fillColor, currentThickness, fillShape, inputText);
+                        shapesList.add(shape);
+                        repaint();
+                        testDummyEvent("도형 전송");
+                    }
                 }
             });
 
@@ -139,12 +188,61 @@ public class CMClientApp {
                     if (!loggedIn)
                         return;
 
-                    xEnd = e.getX();
-                    yEnd = e.getY();
-                    repaint();
+                    if (!customizeMode) {
+                        xEnd = e.getX();
+                        yEnd = e.getY();
+
+                        // 패널 초기화 및 현재 그려지고 있는 도형 그리기
+                        repaint();
+
+                        Graphics2D g2d = (Graphics2D) getGraphics();
+                        g2d.setColor(lineColor);
+                        g2d.setStroke(new BasicStroke(currentThickness));
+
+                        switch (currentShape) {
+                            case "line":
+                                g2d.drawLine(xBegin, yBegin, e.getX(), e.getY());
+                                break;
+                            case "circle":
+                                int radius = (int) Math.sqrt(Math.pow(e.getX() - xBegin, 2) + Math.pow(e.getY() - yBegin, 2));
+                                if (fillShape) {
+                                    g2d.setColor(fillColor);
+                                    g2d.fillOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
+                                    g2d.setColor(lineColor);
+                                }
+                                g2d.drawOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
+                                break;
+                            case "rectangle":
+                                int width = Math.abs(e.getX() - xBegin);
+                                int height = Math.abs(e.getY() - yBegin);
+                                int startX = Math.min(xBegin, e.getX());
+                                int startY = Math.min(yBegin, e.getY());
+                                if (fillShape) {
+                                    g2d.setColor(fillColor);
+                                    g2d.fillRect(startX, startY, width, height);
+                                    g2d.setColor(lineColor);
+                                }
+                                g2d.drawRect(startX, startY, width, height);
+                                break;
+                            case "text":
+                                // Text drawing not supported during mouse dragging
+                                break;
+                        }
+
+                        // Send a dummy event to other clients with the current shape being drawn
+                        testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+
+                        try {
+                            Thread.sleep(25); // 10 밀리초 대기
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
                 }
             });
         }
+
+
 
         private Shape getShapeAtPoint(Point p) {
             for (Shape shape : shapesList) {
@@ -153,6 +251,33 @@ public class CMClientApp {
                 }
             }
             return null;
+        }
+
+        // shapesList를 텍스트 파일로 저장하는 메서드
+        public void saveShapesToFile(String fileName) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+                for (Shape shape : shapesList) {
+                    writer.write(shape.toString());
+                    writer.newLine();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 텍스트 파일에서 shapesList를 로드하는 메서드
+        public void loadShapesFromFile(String fileName) {
+            shapesList.clear(); // 기존 shapesList 초기화
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Shape shape = Shape.createShapeFromString(line);
+                    shapesList.add(shape);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            repaint(); // 패널 다시 그리기
         }
 
         @Override
@@ -164,6 +289,13 @@ public class CMClientApp {
                 g2d.setColor(shape.getLineColor());
                 g2d.setStroke(new BasicStroke(shape.getThickness()));
 
+                // 선택된 Shape일 경우 더 굵은 선으로 그리기
+                if (shape == selectedShape) {
+                    g2d.setStroke(new BasicStroke(shape.getThickness() + 2));
+                    g2d.setColor(Color.RED); // 선택된 Shape의 테두리 색상을 빨간색으로 설정
+                }
+
+
                 switch (shape.getType()) {
                     case "line":
                         g2d.drawLine(shape.getStartPoint().x, shape.getStartPoint().y,
@@ -174,12 +306,10 @@ public class CMClientApp {
                                 Math.pow(shape.getEndPoint().y - shape.getStartPoint().y, 2));
                         if (shape.isFill()) {
                             g2d.setColor(shape.getFillColor());
-                            g2d.fillOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius,
-                                    radius * 2, radius * 2);
+                            g2d.fillOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius, radius * 2, radius * 2);
                         }
                         g2d.setColor(shape.getLineColor());
-                        g2d.drawOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius,
-                                radius * 2, radius * 2);
+                        g2d.drawOval(shape.getStartPoint().x - radius, shape.getStartPoint().y - radius, radius * 2, radius * 2);
                         break;
                     case "rectangle":
                         int width = Math.abs(shape.getEndPoint().x - shape.getStartPoint().x);
@@ -287,6 +417,27 @@ public class CMClientApp {
             }
         });
 
+        saveButton.setPreferredSize(new Dimension(70, 30));
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // shapesList 내용을 텍스트 파일로 저장
+                saveShapes();
+            }
+        });
+
+        loadButton.setPreferredSize(new Dimension(70, 30));
+        loadButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 텍스트 파일에서 shapesList 내용 로드
+                loadShapes();
+                testDummyEvent("동기화");
+            }
+        });
+
+        buttonPanel.add(saveButton, BorderLayout.WEST);
+        buttonPanel.add(loadButton, BorderLayout.WEST);
         buttonPanel.add(loginButton);
         buttonPanel.add(logoutButton);
         whiteboardFrame.add(buttonPanel, BorderLayout.NORTH);
@@ -296,6 +447,14 @@ public class CMClientApp {
         // 프레임 위치 설정 및 표시
         whiteboardFrame.setLocationRelativeTo(null); // 화면 중앙에 위치
         whiteboardFrame.setVisible(true);
+    }
+
+    private void saveShapes() {
+        drawingPanel.saveShapesToFile("shapes.txt");
+    }
+
+    private void loadShapes() {
+        drawingPanel.loadShapesFromFile("shapes.txt");
     }
 
     //로그인 함수
@@ -390,31 +549,36 @@ public class CMClientApp {
     }
 
     //메세지를 보내기 위한 더비 이벤트 함수
-    private void testDummyEvent(String message)
-    {
+    private void testDummyEvent(String message) {
         CMInteractionInfo interInfo = m_clientStub.getCMInfo().getInteractionInfo();
         CMUser myself = interInfo.getMyself();
 
-        if(myself.getState() != CMInfo.CM_SESSION_JOIN)
-        {
+        if (myself.getState() != CMInfo.CM_SESSION_JOIN) {
             printMessage("You should join a session and a group!\n");
             return;
         }
 
-        StringBuilder shapeListString = new StringBuilder();
-        for(Shape shape : drawingPanel.shapesList) {
-            shapeListString.append(shape.toString()).append("|");
-        }
-
         printMessage("draw message\n");
 
-        if(message == null)
+        if (message == null)
             return;
 
         CMDummyEvent due = new CMDummyEvent();
         due.setHandlerSession(myself.getCurrentSession());
         due.setHandlerGroup(myself.getCurrentGroup());
-        due.setDummyInfo(shapeListString.toString());
+
+        if (message.startsWith("DRAW|")) {
+            // 그림이 그려지는 과정일 경우
+            due.setDummyInfo(message);
+        } else {
+            // 최종 그림 정보일 경우
+            StringBuilder shapeListString = new StringBuilder();
+            for (Shape shape : drawingPanel.shapesList) {
+                shapeListString.append(shape.toString()).append("|");
+            }
+            due.setDummyInfo(shapeListString.toString());
+        }
+
         m_clientStub.cast(due, myself.getCurrentSession(), myself.getCurrentGroup());
 
         printMessage("======\n");
