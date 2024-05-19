@@ -22,6 +22,7 @@ public class CMClientApp {
     private JButton saveButton = new JButton("Save");
     private JButton loadButton = new JButton("Load");
     private boolean loggedIn = false;
+    private JToggleButton customizeButton;
 
     // Drawing panel for shapes
     public class DrawingPanel extends JPanel {
@@ -58,10 +59,16 @@ public class CMClientApp {
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
             textButton.addActionListener(e -> currentShape = "text");
 
-            JToggleButton customizeButton = new JToggleButton("Customize");
+            customizeButton = new JToggleButton("Customize");
             customizeButton.addActionListener(e -> {
                 customizeMode = customizeButton.isSelected();
                 selectedShape = null; // Customize 모드 전환 시 선택된 Shape 초기화
+
+                if (customizeMode) {
+                    testDummyEvent("CUSTOMIZE_MODE_ENABLED");
+                } else {
+                    testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+                }
             });
 
 
@@ -146,6 +153,7 @@ public class CMClientApp {
                         Point p = e.getPoint();
                         selectedShape = getShapeAtPoint(p);
                         repaint();
+
                     } else {
                         if (currentShape.equals("text")) {
                             xBegin = e.getX();
@@ -178,7 +186,7 @@ public class CMClientApp {
                         shapesList.add(shape);
                         repaint();
                         testDummyEvent("도형 전송");
-                    } 
+                    }
                 }
             });
 
@@ -240,10 +248,9 @@ public class CMClientApp {
                     }
                 }
             });
+
+
         }
-
-
-
         private Shape getShapeAtPoint(Point p) {
             for (Shape shape : shapesList) {
                 if (shape.contains(p, fontMetrics)) {
@@ -331,6 +338,19 @@ public class CMClientApp {
                 }
             }
         }
+
+
+        public void setCustomizeButtonEnabled (boolean enabled) {
+            customizeButton.setEnabled(enabled);
+        }
+
+        public void setenableCustomizeButton() {
+            if (customizeButton != null) {
+                customizeButton.setEnabled(true);
+                customizeMode = true;  // customizeMode 활성화
+            }
+        }
+
     }
 
 
@@ -570,7 +590,14 @@ public class CMClientApp {
         if (message.startsWith("DRAW|")) {
             // 그림이 그려지는 과정일 경우
             due.setDummyInfo(message);
-        } else {
+        }
+        else if(message.equals("CUSTOMIZE_MODE_ENABLED")){
+            due.setDummyInfo(message);
+        }
+        else if(message.equals("CUSTOMIZE_MODE_DISABLED")){
+            due.setDummyInfo(message);
+        }
+        else {
             // 최종 그림 정보일 경우
             StringBuilder shapeListString = new StringBuilder();
             for (Shape shape : drawingPanel.shapesList) {
