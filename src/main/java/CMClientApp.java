@@ -342,6 +342,7 @@ public class CMClientApp {
 
         public void setCustomizeButtonEnabled (boolean enabled) {
             customizeButton.setEnabled(enabled);
+            customizeMode = false;
         }
 
         public void setenableCustomizeButton() {

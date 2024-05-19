@@ -1,3 +1,3 @@
-line,224,237,323,379,#000000,#000000,1,false,null
-line,536,164,642,343,#000000,#000000,1,false,null
-line,648,201,406,423,#000000,#000000,1,false,null
+rectangle,500,317,274,177,#000000,#ffcc33,1,true,null
+rectangle,672,283,376,115,#000000,#33ff33,1,true,null
+rectangle,712,226,508,79,#000000,#ffcccc,1,true,null
