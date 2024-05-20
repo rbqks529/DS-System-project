@@ -264,7 +264,8 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			// 현재 클라이언트의 CustomizeButton 상태 전송
 			if (!due.getSender().equals(m_clientStub.getCMInfo().getInteractionInfo().getMyself().getName())) {
 				m_client.drawingPanel.setdisableCustomizeButton(false);
-			} else {
+			}
+		}else {
 				// 파이프 문자(|)로 분리하여 Shape 객체 생성
 				String[] shapeStrings = dummyInfo.split("\\|");
 				ArrayList<Shape> shapeList = new ArrayList<>();
@@ -273,16 +274,11 @@ public class CMClientEventHandler implements CMAppEventHandler {
 						shapeList.add(Shape.createShapeFromString(shapeString));
 					}
 				}
-
 				// 클라이언트의 drawingPanel에 shapeList 적용
 				m_client.drawingPanel.shapesList = shapeList;
 				m_client.drawingPanel.repaint();
-
-
 			}
 
-
-		}
 	}
 }
 

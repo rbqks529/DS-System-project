@@ -359,7 +359,7 @@ public class CMClientApp {
             }
         }
         public boolean getCustomizeMode(){
-            if (customizeMode) {
+            if (customizeButton.isSelected()) {
                 return true;
             } else {
                 return false;
@@ -535,15 +535,13 @@ public class CMClientApp {
 
     //로그아웃 함수
     private void logout() {
+
+        customizeButton.setEnabled(true);
+        customizeButton.setSelected(false);
         if(customizeMode) {
             testDummyEvent("CUSTOMIZE_MODE_DISABLED");
-            customizeButton.setEnabled(true);
-            customizeButton.setSelected(false);
         }
-        else{
-            customizeButton.setEnabled(true);
-            customizeButton.setSelected(false);
-        }
+
         boolean bRequestResult = false;
         printMessage("====== logout from default server\n");
         bRequestResult = m_clientStub.logoutCM();
@@ -600,8 +598,6 @@ public class CMClientApp {
             printMessage("You should join a session and a group!\n");
             return;
         }
-
-
 
         if (message == null)
             return;
