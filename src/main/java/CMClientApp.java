@@ -24,6 +24,8 @@ public class CMClientApp {
     private boolean loggedIn = false;
     private JToggleButton customizeButton;
 
+    private boolean customizeMode = false;
+
     // Drawing panel for shapes
     public class DrawingPanel extends JPanel {
         // ArrayList to store shapes
@@ -37,7 +39,7 @@ public class CMClientApp {
         private boolean fillShape = false;
         private FontMetrics fontMetrics;
         public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
-        private boolean customizeMode = false;
+
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
@@ -61,13 +63,19 @@ public class CMClientApp {
 
             customizeButton = new JToggleButton("Customize");
             customizeButton.addActionListener(e -> {
-                customizeMode = customizeButton.isSelected();
-                selectedShape = null; // Customize 모드 전환 시 선택된 Shape 초기화
 
-                if (customizeMode) {
-                    testDummyEvent("CUSTOMIZE_MODE_ENABLED");
+                if (loggedIn) { // 로그인한 상태일 때만 CustomizeButton 동작
+                    customizeMode = customizeButton.isSelected();
+
+                    selectedShape = null;
+
+                    if (customizeMode) {
+                        testDummyEvent("CUSTOMIZE_MODE_ENABLED");
+                    } else {
+                        testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+                    }
                 } else {
-                    testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+                    customizeButton.setSelected(false); // 로그인하지 않았을 때는 CustomizeButton 선택 해제
                 }
             });
 
@@ -340,18 +348,24 @@ public class CMClientApp {
         }
 
 
-        public void setCustomizeButtonEnabled (boolean enabled) {
+        public void setdisableCustomizeButton (boolean enabled) {
             customizeButton.setEnabled(enabled);
-            customizeMode = false;
+            // customizeMode = false;
         }
 
         public void setenableCustomizeButton() {
             if (customizeButton != null) {
                 customizeButton.setEnabled(true);
-                customizeMode = true;  // customizeMode 활성화
+                // customizeMode = true;
             }
         }
-
+        public boolean getCustomizeMode(){
+            if (customizeMode) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
 
@@ -522,6 +536,11 @@ public class CMClientApp {
 
     //로그아웃 함수
     private void logout() {
+        if(customizeMode) {
+            testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+            customizeButton.setEnabled(true);
+            customizeButton.setSelected(false);
+        }
         boolean bRequestResult = false;
         printMessage("====== logout from default server\n");
         bRequestResult = m_clientStub.logoutCM();
@@ -579,7 +598,7 @@ public class CMClientApp {
             return;
         }
 
-        printMessage("draw message\n");
+
 
         if (message == null)
             return;
@@ -589,16 +608,20 @@ public class CMClientApp {
         due.setHandlerGroup(myself.getCurrentGroup());
 
         if (message.startsWith("DRAW|")) {
+            printMessage("draw message\n");
             // 그림이 그려지는 과정일 경우
             due.setDummyInfo(message);
         }
         else if(message.equals("CUSTOMIZE_MODE_ENABLED")){
+            printMessage("CustomizeButton select\n");
             due.setDummyInfo(message);
         }
         else if(message.equals("CUSTOMIZE_MODE_DISABLED")){
+            printMessage("CustomizeButton unselect\n");
             due.setDummyInfo(message);
         }
         else {
+            printMessage("draw message\n");
             // 최종 그림 정보일 경우
             StringBuilder shapeListString = new StringBuilder();
             for (Shape shape : drawingPanel.shapesList) {

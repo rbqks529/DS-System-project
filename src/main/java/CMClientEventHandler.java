@@ -58,6 +58,13 @@ public class CMClientEventHandler implements CMAppEventHandler {
 				due.setDummyInfo("request");
 				m_clientStub.cast(due, interInfo.getMyself().getCurrentSession(), interInfo.getMyself().getCurrentGroup());
 
+				if (m_client.drawingPanel.getCustomizeMode()) {
+					CMDummyEvent customizeStatusEvent = new CMDummyEvent();
+					customizeStatusEvent.setHandlerSession(interInfo.getMyself().getCurrentSession());
+					customizeStatusEvent.setHandlerGroup(interInfo.getMyself().getCurrentGroup());
+					customizeStatusEvent.setDummyInfo("CHECK_CUSTOMIZE_STATUS");
+					m_clientStub.cast(customizeStatusEvent, interInfo.getMyself().getCurrentSession(), interInfo.getMyself().getCurrentGroup());
+				}
 				break;
 			case CMDataEvent.REMOVE_USER:
 				printMessage("[" + de.getUserName() + "] leaves WhiteBoard group\n");
@@ -164,6 +171,7 @@ public class CMClientEventHandler implements CMAppEventHandler {
 				m_client.printStyledMessage("Intentionally disconnected all channels from ["
 						+ se.getChannelName() + "]!\n", "bold");
 				m_client.setButtonsAccordingToClientState();
+
 				break;
 			default:
 				return;
@@ -243,35 +251,38 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			} catch (InterruptedException ex) {
 				ex.printStackTrace();
 			}
-
-		}else if(dummyInfo.equals("CUSTOMIZE_MODE_ENABLED")){
+			// 자기는 enable이니 다른 클라이언트를 disable 시키기
+		} else if (dummyInfo.equals("CUSTOMIZE_MODE_ENABLED")) {
 			if (!due.getSender().equals(m_clientStub.getCMInfo().getInteractionInfo().getMyself().getName())) {
-				m_client.drawingPanel.setCustomizeButtonEnabled(false);
+				m_client.drawingPanel.setdisableCustomizeButton(false);
 			}
-
-		}else if (dummyInfo.equals("CUSTOMIZE_MODE_DISABLED")) {
+			// 자기가 disable이니 다른 클라리언트를 enable 시키기
+		} else if (dummyInfo.equals("CUSTOMIZE_MODE_DISABLED")) {
 			// Customize 모드 비활성화 시, customize 버튼 활성화
 			m_client.drawingPanel.setenableCustomizeButton();
-		}
-		else {
-			// 파이프 문자(|)로 분리하여 Shape 객체 생성
-			String[] shapeStrings = dummyInfo.split("\\|");
-			ArrayList<Shape> shapeList = new ArrayList<>();
-			for (String shapeString : shapeStrings) {
-				if (!shapeString.isEmpty()) {
-					shapeList.add(Shape.createShapeFromString(shapeString));
+		} else if (dummyInfo.equals("CHECK_CUSTOMIZE_STATUS")) {
+			// 현재 클라이언트의 CustomizeButton 상태 전송
+			if (!due.getSender().equals(m_clientStub.getCMInfo().getInteractionInfo().getMyself().getName())) {
+				m_client.drawingPanel.setdisableCustomizeButton(false);
+			} else {
+				// 파이프 문자(|)로 분리하여 Shape 객체 생성
+				String[] shapeStrings = dummyInfo.split("\\|");
+				ArrayList<Shape> shapeList = new ArrayList<>();
+				for (String shapeString : shapeStrings) {
+					if (!shapeString.isEmpty()) {
+						shapeList.add(Shape.createShapeFromString(shapeString));
+					}
 				}
+
+				// 클라이언트의 drawingPanel에 shapeList 적용
+				m_client.drawingPanel.shapesList = shapeList;
+				m_client.drawingPanel.repaint();
+
+
 			}
 
-			// 클라이언트의 drawingPanel에 shapeList 적용
-			m_client.drawingPanel.shapesList = shapeList;
-			m_client.drawingPanel.repaint();
-
 
 		}
-
-
 	}
-
 }
 
