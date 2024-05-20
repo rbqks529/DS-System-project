@@ -63,7 +63,6 @@ public class CMClientApp {
 
             customizeButton = new JToggleButton("Customize");
             customizeButton.addActionListener(e -> {
-
                 if (loggedIn) { // 로그인한 상태일 때만 CustomizeButton 동작
                     customizeMode = customizeButton.isSelected();
 
@@ -538,6 +537,10 @@ public class CMClientApp {
     private void logout() {
         if(customizeMode) {
             testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+            customizeButton.setEnabled(true);
+            customizeButton.setSelected(false);
+        }
+        else{
             customizeButton.setEnabled(true);
             customizeButton.setSelected(false);
         }
