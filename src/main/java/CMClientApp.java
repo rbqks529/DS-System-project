@@ -542,15 +542,15 @@ public class CMClientApp {
         if(customizeMode) {
             testDummyEvent("CUSTOMIZE_MODE_DISABLED");
         }*/
-        if(customizeButton.isSelected()){
+
+        // custombutton을 누른 채로 로그아웃 했을 때
+        if(customizeButton.isSelected()) {
             testDummyEvent("CUSTOMIZE_MODE_DISABLED");
-            customizeButton.setEnabled(true);
-            customizeButton.setSelected(false);
         }
-        else{
-            customizeButton.setEnabled(true);
-            customizeButton.setSelected(false);
-        }
+        // 일반적으로 로그아웃하였을 때 custombutton을 초기화 시켜줌
+        customizeButton.setEnabled(true);
+        customizeButton.setSelected(false);
+
 
         boolean bRequestResult = false;
         printMessage("====== logout from default server\n");
