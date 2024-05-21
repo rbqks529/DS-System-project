@@ -516,6 +516,10 @@ public class CMClientApp {
             long lDelay = System.currentTimeMillis() - m_eventHandler.getStartTime();
             if(bRequestResult)
             {
+
+                // 로그인 상태 설정
+                loggedIn = true;
+
                 printMessage("successfully sent the login request.\n");
                 printMessage("return delay: "+lDelay+" ms.\n");
             }
@@ -527,32 +531,38 @@ public class CMClientApp {
         }
         printMessage("======\n");
 
-        // 로그인 상태 설정
-        loggedIn = true;
-
     }
 
 
     //로그아웃 함수
     private void logout() {
 
-        customizeButton.setEnabled(true);
+        /*customizeButton.setEnabled(true);
         customizeButton.setSelected(false);
         if(customizeMode) {
             testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+        }*/
+        if(customizeButton.isSelected()){
+            testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+            customizeButton.setEnabled(true);
+            customizeButton.setSelected(false);
+        }
+        else{
+            customizeButton.setEnabled(true);
+            customizeButton.setSelected(false);
         }
 
         boolean bRequestResult = false;
         printMessage("====== logout from default server\n");
         bRequestResult = m_clientStub.logoutCM();
-        if (bRequestResult)
+        if (bRequestResult) {
+            // 로그인 상태 설정
+            loggedIn = false;
             printMessage("successfully sent the logout request.\n");
-        else
+        }else
             printStyledMessage("failed the logout request!\n", "bold");
         printMessage("======\n");
 
-        // 로그인 상태 설정
-        loggedIn = false;
 
         setButtonsAccordingToClientState();
     }
