@@ -62,6 +62,10 @@ public class Shape {
 		return thickness;
 	}
 
+	public void setEndPoint(Point p) {
+		this.endPoint = p;
+	}
+
 	public boolean isFill() {
 		return fill;
 	}
@@ -119,7 +123,7 @@ public class Shape {
 	public String toString() {
 		return type + "," + startPoint.x + "," + startPoint.y + "," + endPoint.x + "," + endPoint.y + ","
 				+ colorToHex(lineColor) + "," + colorToHex(fillColor) + "," + thickness + ","
-				+ fill + "," + text;
+				+ fill + "," + text + ";";
 	}
 	// Color to Hexadecimal String
 	private String colorToHex(Color color) {
