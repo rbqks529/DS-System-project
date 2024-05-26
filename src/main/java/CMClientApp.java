@@ -22,21 +22,25 @@ public class CMClientApp {
     private JButton saveButton = new JButton("Save");
     private JButton loadButton = new JButton("Load");
     private boolean loggedIn = false;
+    private JToggleButton customizeButton;
+    private boolean customizeMode = false;
 
     // Drawing panel for shapes
     public class DrawingPanel extends JPanel {
         // ArrayList to store shapes
         public ArrayList<Shape> shapesList = new ArrayList<>();
-        private String currentShape;
-        private int xBegin, yBegin, xEnd, yEnd;
+        public String currentShape;
+        public int xBegin, yBegin, xEnd, yEnd;
         public Color lineColor = Color.BLACK;
         public Color fillColor = null;
         private String inputText = null;
         public int currentThickness = 1;
-        private boolean fillShape = false;
+        public boolean fillShape = false;
         private FontMetrics fontMetrics;
         public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
-        private boolean customizeMode = false;
+        private long lastEventTime = 0; // 마지막으로 이벤트를 전송한 시간을 저장할 변수
+        private static final int EVENT_INTERVAL = 10; // 이벤트 전송 간격 (밀리초)
+
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
@@ -58,10 +62,21 @@ public class CMClientApp {
             rectangleButton.addActionListener(e -> currentShape = "rectangle");
             textButton.addActionListener(e -> currentShape = "text");
 
-            JToggleButton customizeButton = new JToggleButton("Customize");
+            customizeButton = new JToggleButton("Customize");
             customizeButton.addActionListener(e -> {
-                customizeMode = customizeButton.isSelected();
-                selectedShape = null; // Customize 모드 전환 시 선택된 Shape 초기화
+                if (loggedIn) { // 로그인한 상태일 때만 CustomizeButton 동작
+                    customizeMode = customizeButton.isSelected();
+
+                    selectedShape = null;
+
+                    if (customizeMode) {
+                        testDummyEvent("CUSTOMIZE_MODE_ENABLED");
+                    } else {
+                        testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+                    }
+                } else {
+                    customizeButton.setSelected(false); // 로그인하지 않았을 때는 CustomizeButton 선택 해제
+                }
             });
 
 
@@ -146,6 +161,7 @@ public class CMClientApp {
                         Point p = e.getPoint();
                         selectedShape = getShapeAtPoint(p);
                         repaint();
+
                     } else {
                         if (currentShape.equals("text")) {
                             xBegin = e.getX();
@@ -192,58 +208,19 @@ public class CMClientApp {
                         xEnd = e.getX();
                         yEnd = e.getY();
 
-                        // 패널 초기화 및 현재 그려지고 있는 도형 그리기
-                        repaint();
-
-                        Graphics2D g2d = (Graphics2D) getGraphics();
-                        g2d.setColor(lineColor);
-                        g2d.setStroke(new BasicStroke(currentThickness));
-
-                        switch (currentShape) {
-                            case "line":
-                                g2d.drawLine(xBegin, yBegin, e.getX(), e.getY());
-                                break;
-                            case "circle":
-                                int radius = (int) Math.sqrt(Math.pow(e.getX() - xBegin, 2) + Math.pow(e.getY() - yBegin, 2));
-                                if (fillShape) {
-                                    g2d.setColor(fillColor);
-                                    g2d.fillOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
-                                    g2d.setColor(lineColor);
-                                }
-                                g2d.drawOval(xBegin - radius, yBegin - radius, radius * 2, radius * 2);
-                                break;
-                            case "rectangle":
-                                int width = Math.abs(e.getX() - xBegin);
-                                int height = Math.abs(e.getY() - yBegin);
-                                int startX = Math.min(xBegin, e.getX());
-                                int startY = Math.min(yBegin, e.getY());
-                                if (fillShape) {
-                                    g2d.setColor(fillColor);
-                                    g2d.fillRect(startX, startY, width, height);
-                                    g2d.setColor(lineColor);
-                                }
-                                g2d.drawRect(startX, startY, width, height);
-                                break;
-                            case "text":
-                                // Text drawing not supported during mouse dragging
-                                break;
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastEventTime >= EVENT_INTERVAL) {
+                            // 이벤트 전송
+                            testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+                            lastEventTime = currentTime; // 마지막 이벤트 전송 시간 업데이트
                         }
 
-                        // Send a dummy event to other clients with the current shape being drawn
-                        testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
-
-                        try {
-                            Thread.sleep(25); // 10 밀리초 대기
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
                     }
                 }
             });
+
+
         }
-
-
-
         private Shape getShapeAtPoint(Point p) {
             for (Shape shape : shapesList) {
                 if (shape.contains(p, fontMetrics)) {
@@ -329,6 +306,57 @@ public class CMClientApp {
                         g2d.drawString(shape.getText(), shape.getStartPoint().x, shape.getStartPoint().y); // Text position adjusted to be centered
                         break;
                 }
+            }
+            // 현재 그리고 있는 도형을 그립니다.
+            if (currentShape != null) {
+                g2d.setColor(lineColor);
+                g2d.setStroke(new BasicStroke(currentThickness));
+
+                switch (currentShape) {
+                    case "line":
+                        g2d.drawLine(xBegin, yBegin, xEnd, yEnd);
+                        break;
+                    case "circle":
+                        int radius = (int) Math.sqrt(Math.pow(xEnd - xBegin, 2) + Math.pow(yEnd - yBegin, 2));
+                        if (fillShape) {
+                            g2d.setColor(fillColor);
+                            g2d.fillOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
+                        }
+                        g2d.setColor(lineColor);
+                        g2d.drawOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
+                        break;
+                    case "rectangle":
+                        int width = Math.abs(xEnd - xBegin);
+                        int height = Math.abs(yEnd - yBegin);
+                        int startX = Math.min(xBegin, xEnd);
+                        int startY = Math.min(yBegin, yEnd);
+                        if (fillShape) {
+                            g2d.setColor(fillColor);
+                            g2d.fillRect(startX, startY, width, height);
+                        }
+                        g2d.setColor(lineColor);
+                        g2d.drawRect(startX, startY, width, height);
+                        break;
+                }
+            }
+        }
+
+        public void setdisableCustomizeButton (boolean enabled) {
+            customizeButton.setEnabled(enabled);
+            // customizeMode = false;
+        }
+
+        public void setenableCustomizeButton() {
+            if (customizeButton != null) {
+                customizeButton.setEnabled(true);
+                // customizeMode = true;
+            }
+        }
+        public boolean getCustomizeMode(){
+            if (customizeButton.isSelected()) {
+                return true;
+            } else {
+                return false;
             }
         }
     }
@@ -417,6 +445,7 @@ public class CMClientApp {
             }
         });
 
+        saveButton.setEnabled(false);
         saveButton.setPreferredSize(new Dimension(70, 30));
         saveButton.addActionListener(new ActionListener() {
             @Override
@@ -426,12 +455,14 @@ public class CMClientApp {
             }
         });
 
+        loadButton.setEnabled(false);
         loadButton.setPreferredSize(new Dimension(70, 30));
         loadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // 텍스트 파일에서 shapesList 내용 로드
                 loadShapes();
+                testDummyEvent("DRAW|" + null+ "|" + 0 + "|" + 0+ "|" + 0+ "|" + 0 + "|" + 0 + "|" + 0 + "|" + 0);
                 testDummyEvent("동기화");
             }
         });
@@ -482,6 +513,10 @@ public class CMClientApp {
             long lDelay = System.currentTimeMillis() - m_eventHandler.getStartTime();
             if(bRequestResult)
             {
+
+                // 로그인 상태 설정
+                loggedIn = true;
+
                 printMessage("successfully sent the login request.\n");
                 printMessage("return delay: "+lDelay+" ms.\n");
             }
@@ -493,25 +528,32 @@ public class CMClientApp {
         }
         printMessage("======\n");
 
-        // 로그인 상태 설정
-        loggedIn = true;
-
     }
 
 
     //로그아웃 함수
     private void logout() {
+
+        // custombutton을 누른 채로 로그아웃 했을 때
+        if(customizeButton.isSelected()) {
+            testDummyEvent("CUSTOMIZE_MODE_DISABLED");
+        }
+        // 일반적으로 로그아웃하였을 때 custombutton을 초기화 시켜줌
+        customizeButton.setEnabled(true);
+        customizeButton.setSelected(false);
+
+
         boolean bRequestResult = false;
         printMessage("====== logout from default server\n");
         bRequestResult = m_clientStub.logoutCM();
-        if (bRequestResult)
+        if (bRequestResult) {
+            // 로그인 상태 설정
+            loggedIn = false;
             printMessage("successfully sent the logout request.\n");
-        else
+        }else
             printStyledMessage("failed the logout request!\n", "bold");
         printMessage("======\n");
 
-        // 로그인 상태 설정
-        loggedIn = false;
 
         setButtonsAccordingToClientState();
     }
@@ -527,22 +569,32 @@ public class CMClientApp {
         {
             case CMInfo.CM_INIT: //로그인 버튼
                 loginButton.setEnabled(true);
+                saveButton.setEnabled(false);
+                loadButton.setEnabled(false);
                 logoutButton.setEnabled(false);
                 break;
             case CMInfo.CM_CONNECT: //로그인 버튼
                 loginButton.setEnabled(true);
-                logoutButton.setEnabled(false);;
+                saveButton.setEnabled(false);
+                loadButton.setEnabled(false);
+                logoutButton.setEnabled(false);
                 break;
             case CMInfo.CM_LOGIN: //로그아웃 버튼
                 loginButton.setEnabled(false);
+                saveButton.setEnabled(true);
+                loadButton.setEnabled(true);
                 logoutButton.setEnabled(true);
                 break;
             case CMInfo.CM_SESSION_JOIN:    //로그아웃 버튼
                 loginButton.setEnabled(false);
+                saveButton.setEnabled(true);
+                loadButton.setEnabled(true);
                 logoutButton.setEnabled(true);
                 break;
             default:    //로그인 버튼
                 loginButton.setEnabled(true);
+                saveButton.setEnabled(false);
+                loadButton.setEnabled(false);
                 logoutButton.setEnabled(false);
                 break;
         }
@@ -558,8 +610,6 @@ public class CMClientApp {
             return;
         }
 
-        printMessage("draw message\n");
-
         if (message == null)
             return;
 
@@ -568,9 +618,20 @@ public class CMClientApp {
         due.setHandlerGroup(myself.getCurrentGroup());
 
         if (message.startsWith("DRAW|")) {
+            printMessage("draw message\n");
             // 그림이 그려지는 과정일 경우
             due.setDummyInfo(message);
-        } else {
+        }
+        else if(message.equals("CUSTOMIZE_MODE_ENABLED")){
+            printMessage("CustomizeButton select\n");
+            due.setDummyInfo(message);
+        }
+        else if(message.equals("CUSTOMIZE_MODE_DISABLED")){
+            printMessage("CustomizeButton unselect\n");
+            due.setDummyInfo(message);
+        }
+        else {
+            printMessage("draw message\n");
             // 최종 그림 정보일 경우
             StringBuilder shapeListString = new StringBuilder();
             for (Shape shape : drawingPanel.shapesList) {
