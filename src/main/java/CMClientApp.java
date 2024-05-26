@@ -541,6 +541,7 @@ public class CMClientApp {
         // 일반적으로 로그아웃하였을 때 custombutton을 초기화 시켜줌
         customizeButton.setEnabled(true);
         customizeButton.setSelected(false);
+        customizeMode = false;
 
 
         boolean bRequestResult = false;
