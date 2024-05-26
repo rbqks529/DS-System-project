@@ -231,12 +231,17 @@ public class CMClientEventHandler implements CMAppEventHandler {
 			m_client.drawingPanel.currentShape = shapeType;
 			m_client.drawingPanel.currentThickness = thickness;
 			m_client.drawingPanel.lineColor = lineColor;
+			if (parts[7].equals("0")) {
+				m_client.drawingPanel.fillShape = false;
+			} else {
+				m_client.drawingPanel.fillColor = fillColor;
+				m_client.drawingPanel.fillShape = true;
+			}
 			m_client.drawingPanel.xBegin = xBegin;
 			m_client.drawingPanel.yBegin = yBegin;
 			m_client.drawingPanel.xEnd = xEnd;
 			m_client.drawingPanel.yEnd = yEnd;
 
-			// 현재 클라이언트의 drawingPanel 초기화
 			m_client.drawingPanel.repaint();
 
 			} else {

@@ -33,10 +33,12 @@ public class CMClientApp {
         public Color fillColor = null;
         private String inputText = null;
         public int currentThickness = 1;
-        private boolean fillShape = false;
+        public boolean fillShape = false;
         private FontMetrics fontMetrics;
         public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
         private boolean customizeMode = false;
+        private long lastEventTime = 0; // 마지막으로 이벤트를 전송한 시간을 저장할 변수
+        private static final int EVENT_INTERVAL = 10; // 이벤트 전송 간격 (밀리초)
 
         public DrawingPanel() {
             setPreferredSize(new Dimension(600, 400));
@@ -192,8 +194,13 @@ public class CMClientApp {
                         xEnd = e.getX();
                         yEnd = e.getY();
 
-                        // Send a dummy event to other clients with the current shape being drawn
-                        testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+                        long currentTime = System.currentTimeMillis();
+                        if (currentTime - lastEventTime >= EVENT_INTERVAL) {
+                            // 이벤트 전송
+                            testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+                            lastEventTime = currentTime; // 마지막 이벤트 전송 시간 업데이트
+                        }
+
                     }
                 }
             });
@@ -297,6 +304,11 @@ public class CMClientApp {
                         break;
                     case "circle":
                         int radius = (int) Math.sqrt(Math.pow(xEnd - xBegin, 2) + Math.pow(yEnd - yBegin, 2));
+                        if (fillShape) {
+                            g2d.setColor(fillColor);
+                            g2d.fillOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
+                        }
+                        g2d.setColor(lineColor);
                         g2d.drawOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
                         break;
                     case "rectangle":
@@ -304,6 +316,11 @@ public class CMClientApp {
                         int height = Math.abs(yEnd - yBegin);
                         int startX = Math.min(xBegin, xEnd);
                         int startY = Math.min(yBegin, yEnd);
+                        if (fillShape) {
+                            g2d.setColor(fillColor);
+                            g2d.fillRect(startX, startY, width, height);
+                        }
+                        g2d.setColor(lineColor);
                         g2d.drawRect(startX, startY, width, height);
                         break;
                 }
