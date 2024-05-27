@@ -34,8 +34,12 @@ public class CMClientApp {
         public Color lineColor = Color.BLACK;
         public Color fillColor = null;
         private String inputText = null;
+        public int Thickness = 1;
         public int currentThickness = 1;
         public boolean fillShape = false;
+        public boolean currentFillShape = false;
+        public Color currentFillColor = null;
+        public Color currentlineColor = Color.BLACK;
         private FontMetrics fontMetrics;
         public Shape selectedShape; // 선택된 Shape 객체를 저장할 변수
         private long lastEventTime = 0; // 마지막으로 이벤트를 전송한 시간을 저장할 변수
@@ -130,7 +134,7 @@ public class CMClientApp {
 
             Integer[] thicknessOptions = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}; // Thickness options
             JComboBox<Integer> thicknessComboBox = new JComboBox<>(thicknessOptions);
-            thicknessComboBox.setSelectedItem(currentThickness);
+            thicknessComboBox.setSelectedItem(Thickness);
 
             thicknessComboBox.addActionListener(e ->  {
 
@@ -141,7 +145,7 @@ public class CMClientApp {
                     repaint();
                     testDummyEvent("전송");
                 } else {
-                    currentThickness = (int) thicknessComboBox.getSelectedItem();
+                    Thickness = (int) thicknessComboBox.getSelectedItem();
                 }
 
             });
@@ -169,7 +173,7 @@ public class CMClientApp {
                             inputText = JOptionPane.showInputDialog("Enter text:");
                             if (inputText != null && !inputText.isEmpty()) {
                                 Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
-                                        lineColor, fillColor, currentThickness, fillShape, inputText);
+                                        lineColor, fillColor, Thickness, fillShape, inputText);
                                 shapesList.add(shape);
                                 repaint();
                                 testDummyEvent("도형 전송");
@@ -190,7 +194,7 @@ public class CMClientApp {
                         xEnd = e.getX();
                         yEnd = e.getY();
                         Shape shape = new Shape(currentShape, xBegin, yBegin, xEnd, yEnd,
-                                lineColor, fillColor, currentThickness, fillShape, inputText);
+                                lineColor, fillColor, Thickness, fillShape, inputText);
                         shapesList.add(shape);
                         repaint();
                         testDummyEvent("도형 전송");
@@ -211,7 +215,7 @@ public class CMClientApp {
                         long currentTime = System.currentTimeMillis();
                         if (currentTime - lastEventTime >= EVENT_INTERVAL) {
                             // 이벤트 전송
-                            testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + currentThickness);
+                            testDummyEvent("DRAW|" + currentShape + "|" + xBegin + "|" + yBegin + "|" + e.getX() + "|" + e.getY() + "|" + lineColor.getRGB() + "|" + (fillShape ? fillColor.getRGB() : 0) + "|" + Thickness);
                             lastEventTime = currentTime; // 마지막 이벤트 전송 시간 업데이트
                         }
 
@@ -309,7 +313,7 @@ public class CMClientApp {
             }
             // 현재 그리고 있는 도형을 그립니다.
             if (currentShape != null) {
-                g2d.setColor(lineColor);
+                g2d.setColor(currentlineColor );
                 g2d.setStroke(new BasicStroke(currentThickness));
 
                 switch (currentShape) {
@@ -318,11 +322,11 @@ public class CMClientApp {
                         break;
                     case "circle":
                         int radius = (int) Math.sqrt(Math.pow(xEnd - xBegin, 2) + Math.pow(yEnd - yBegin, 2));
-                        if (fillShape) {
-                            g2d.setColor(fillColor);
+                        if (currentFillShape) {
+                            g2d.setColor(currentFillColor);
                             g2d.fillOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
                         }
-                        g2d.setColor(lineColor);
+                        g2d.setColor(currentlineColor );
                         g2d.drawOval(xBegin - radius, yBegin - radius, 2 * radius, 2 * radius);
                         break;
                     case "rectangle":
@@ -330,11 +334,11 @@ public class CMClientApp {
                         int height = Math.abs(yEnd - yBegin);
                         int startX = Math.min(xBegin, xEnd);
                         int startY = Math.min(yBegin, yEnd);
-                        if (fillShape) {
-                            g2d.setColor(fillColor);
+                        if (currentFillShape) {
+                            g2d.setColor(currentFillColor);
                             g2d.fillRect(startX, startY, width, height);
                         }
-                        g2d.setColor(lineColor);
+                        g2d.setColor(currentlineColor );
                         g2d.drawRect(startX, startY, width, height);
                         break;
                 }
@@ -452,6 +456,7 @@ public class CMClientApp {
             public void actionPerformed(ActionEvent e) {
                 // shapesList 내용을 텍스트 파일로 저장
                 saveShapes();
+                printMessage("저장\n");
             }
         });
 
@@ -462,6 +467,7 @@ public class CMClientApp {
             public void actionPerformed(ActionEvent e) {
                 // 텍스트 파일에서 shapesList 내용 로드
                 loadShapes();
+                printMessage("불러오기\n");
                 testDummyEvent("DRAW|" + null+ "|" + 0 + "|" + 0+ "|" + 0+ "|" + 0 + "|" + 0 + "|" + 0 + "|" + 0);
                 testDummyEvent("동기화");
             }
@@ -619,7 +625,6 @@ public class CMClientApp {
         due.setHandlerGroup(myself.getCurrentGroup());
 
         if (message.startsWith("DRAW|")) {
-            printMessage("draw message\n");
             // 그림이 그려지는 과정일 경우
             due.setDummyInfo(message);
         }
@@ -632,7 +637,6 @@ public class CMClientApp {
             due.setDummyInfo(message);
         }
         else {
-            printMessage("draw message\n");
             // 최종 그림 정보일 경우
             StringBuilder shapeListString = new StringBuilder();
             for (Shape shape : drawingPanel.shapesList) {
@@ -642,8 +646,6 @@ public class CMClientApp {
         }
 
         m_clientStub.cast(due, myself.getCurrentSession(), myself.getCurrentGroup());
-
-        printMessage("======\n");
     }
 
     public static void main(String[] args) {

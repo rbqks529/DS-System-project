@@ -213,12 +213,12 @@ public class CMClientEventHandler implements CMAppEventHandler {
 
 			m_client.drawingPanel.currentShape = shapeType;
 			m_client.drawingPanel.currentThickness = thickness;
-			m_client.drawingPanel.lineColor = lineColor;
+			m_client.drawingPanel.currentlineColor = lineColor;
 			if (parts[7].equals("0")) {
-				m_client.drawingPanel.fillShape = false;
+				m_client.drawingPanel.currentFillShape = false;
 			} else {
-				m_client.drawingPanel.fillColor = fillColor;
-				m_client.drawingPanel.fillShape = true;
+				m_client.drawingPanel.currentFillColor = fillColor;
+				m_client.drawingPanel.currentFillShape = true;
 			}
 			m_client.drawingPanel.xBegin = xBegin;
 			m_client.drawingPanel.yBegin = yBegin;
