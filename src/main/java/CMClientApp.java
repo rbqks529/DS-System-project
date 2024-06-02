@@ -455,7 +455,7 @@ public class CMClientApp {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // shapesList 내용을 텍스트 파일로 저장
-                saveShapes();
+                drawingPanel.saveShapesToFile("shapes.txt");
                 printMessage("저장\n");
             }
         });
@@ -466,7 +466,7 @@ public class CMClientApp {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // 텍스트 파일에서 shapesList 내용 로드
-                loadShapes();
+                drawingPanel.loadShapesFromFile("shapes.txt");
                 printMessage("불러오기\n");
                 testDummyEvent("DRAW|" + null+ "|" + 0 + "|" + 0+ "|" + 0+ "|" + 0 + "|" + 0 + "|" + 0 + "|" + 0);
                 testDummyEvent("동기화");
@@ -484,14 +484,6 @@ public class CMClientApp {
         // 프레임 위치 설정 및 표시
         whiteboardFrame.setLocationRelativeTo(null); // 화면 중앙에 위치
         whiteboardFrame.setVisible(true);
-    }
-
-    private void saveShapes() {
-        drawingPanel.saveShapesToFile("shapes.txt");
-    }
-
-    private void loadShapes() {
-        drawingPanel.loadShapesFromFile("shapes.txt");
     }
 
     //로그인 함수
